@@ -3,7 +3,7 @@
 import { s3Client } from '../s3';
 import { ListBucketsCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { z } from 'zod';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '../supabase/server';
 import { revalidatePath } from 'next/cache';
 import { eventSchema } from '../schemas';
 

@@ -1,5 +1,6 @@
 import { EventCreatorModal } from '@/components/event-creator-dialog';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 
 export default async function EventsPage() {
   const supabase = await createClient();
@@ -12,12 +13,16 @@ export default async function EventsPage() {
     .select()
     .eq('user_id', user?.id);
 
-  console.log(events);
-
   return (
     <div>
       <EventCreatorModal />
-      <ul>{events?.map((event) => <li key={event.id}>{event.name}</li>)}</ul>
+      <ul>
+        {events?.map((event) => (
+          <li key={event.id}>
+            <Link href={`/events/${event.id}`}>{event.name}</Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
 import { X } from 'lucide-react';
 import { listBuckets, uploadFile } from '@/lib/api/actions';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/use-auth';
 
 export function MultiMediaUploader() {
