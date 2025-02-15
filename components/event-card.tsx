@@ -1,0 +1,58 @@
+import { ArrowRight, Calendar, MapPin } from 'lucide-react';
+import { format } from 'date-fns';
+import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
+import { type Event } from '@/lib/types';
+
+export function EventCard({ event }: { event: Event }) {
+  const eventDate = event.date ? new Date(event.date) : null;
+  const isUpcoming = eventDate ? eventDate > new Date() : false;
+
+  return (
+    <Card className='rounded-sm space-y-3 border border-gray-100 hover:border-gray-200 transition-colors duration-200 bg-background'>
+      <CardHeader className='flex justify-between items-center pt-3'>
+        <h3 className='text-sm font-medium text-gray-800'>{event.name}</h3>
+        <span
+          className={`text-xs px-1.5 py-0.5 rounded-sm ${isUpcoming ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}
+        >
+          {isUpcoming ? 'Upcoming' : 'Past'}
+        </span>
+      </CardHeader>
+
+      <CardContent className='space-y-2'>
+        <div className='flex items-center text-xs text-muted-foreground'>
+          <Calendar className='w-3 h-3 mr-2' />
+          <span>{eventDate ? format(eventDate, 'PPP') : 'No date set'}</span>
+        </div>
+
+        <div className='flex items-center text-xs text-muted-foreground'>
+          <MapPin className='w-3 h-3 mr-2' />
+          <span className='line-clamp-1'>
+            {event.location || 'No location set'}
+          </span>
+        </div>
+
+        {event.notes && (
+          <p className='text-xs text-muted-foreground line-clamp-2'>
+            {event.notes}
+          </p>
+        )}
+      </CardContent>
+
+      <CardFooter className='border-t bg-gray-50'>
+        <Link
+          href={`/events/${event.id}`}
+          className='text-xs font-medium text-blue-500 hover:text-blue-600 flex items-center group transition-all'
+        >
+          Check event
+          <ArrowRight className='w-3 h-3 ml-0.5 group-hover:translate-x-1 transition-transform duration-200' />
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+}

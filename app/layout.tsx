@@ -33,9 +33,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className='min-h-screen'>
-            <div>{children}</div>
-            <footer className='w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16'>
+          <main
+            className='min-h-screen max-w-5xl mx-auto flex flex-col justify-between items-stretch
+          '
+          >
+            <div className='flex-1'>{children}</div>
+            <footer className='w-full flex items-center justify-center border-t mx-auto text-center text-xs'>
               <ThemeSwitcher />
             </footer>
           </main>
