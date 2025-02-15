@@ -4,12 +4,17 @@ import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
 import { X } from 'lucide-react';
-import { listBuckets } from '@/lib/api/actions';
+import { listBuckets, uploadFile } from '@/lib/api/actions';
+import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export function MultiMediaUploader() {
+  const supabase = createClient();
+  const { userId } = useAuth();
   const [files, setFles] = useState<File[]>([]);
 
-  console.log(files);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 1000;
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -30,6 +35,65 @@ export function MultiMediaUploader() {
     const newImages = files.filter((_, i) => i !== index);
     setFles(newImages);
   };
+
+  async function handleUploadFiles() {
+    const uploadResults: { file: File; success: boolean; error?: string }[] =
+      [];
+
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    const uploadWithRetry = async (
+      file: File,
+      retryCount = 0
+    ): Promise<boolean> => {
+      try {
+        const response = await uploadFile(file);
+
+        console.log(response);
+
+        if (response?.$metadata.httpStatusCode === 200) {
+          const { data, error } = await supabase.from('photos').insert({
+            key: file.name,
+            user_id: userId,
+            bucket: 'tests',
+            event_id: 1,
+            size: file.size,
+            type: file.type,
+            updated_at: new Date(),
+            file_path: '',
+          });
+
+          console.log(data);
+
+          if (error) throw error;
+          return true;
+        }
+        throw new Error('Upload failed');
+      } catch (error) {
+        if (retryCount < MAX_RETRIES) {
+          await delay(RETRY_DELAY * (retryCount + 1));
+          return uploadWithRetry(file, retryCount + 1);
+        }
+        return false;
+      }
+    };
+
+    await Promise.all(
+      files.map(async (file) => {
+        const success = await uploadWithRetry(file);
+        uploadResults.push({
+          file,
+          success,
+          error: success ? undefined : 'Failed after max retries',
+        });
+      })
+    );
+
+    setFles(files.filter((_, index) => !uploadResults[index].success));
+
+    return uploadResults;
+  }
 
   return (
     <div className='w-full max-w-md mx-auto'>
@@ -76,7 +140,13 @@ export function MultiMediaUploader() {
 
       <div className='py-6 flex items-center justify-evenly'>
         <button onClick={async () => await listBuckets()}>List buckets</button>
-        <button onClick={async () => await listBuckets()}>Upload images</button>
+        <button
+          onClick={() => {
+            handleUploadFiles();
+          }}
+        >
+          Upload images
+        </button>
       </div>
     </div>
   );
