@@ -4,6 +4,8 @@ import { s3Client } from '@/lib/s3';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dynamic from 'next/dynamic';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const Gallery = dynamic(() => import('../../../components/event-gallery'));
 
@@ -51,6 +53,8 @@ export default async function EventGalleryPage({
     .order('uploaded_at', { ascending: false })
     .limit(20);
 
+  console.log(moments);
+
   if (error) {
     console.error('Error fetching images:', error);
     return <div className='text-gray-500'>Error loading images.</div>;
@@ -60,17 +64,37 @@ export default async function EventGalleryPage({
     (moments || []).map(async (moment) => ({
       id: moment.id,
       url: await getPresignedUrl(moment.key),
+      name: moment.name,
     }))
   );
 
   return (
     <div className='container max-w-6xl py-6'>
-      <h2 className='text-xl font-semibold mb-4'>Event Gallery</h2>
-      <Gallery
-        initialImages={initialImages}
-        eventId={event.id}
-        userId={user.id}
-      />
+      <header className='flex items-center justify-between mb-8'>
+        <div>
+          <h2 className='font-medium text-2xl'>{event.name}</h2>
+          <p className='text-muted-foreground text-sm mt-1'>
+            Manage the event moments
+          </p>
+        </div>
+        <div className='flex items-center justify-center space-x-4'>
+          <Link className='text-xs hover:underline' href={'/events'}>
+            Events
+          </Link>
+          <Button variant={'outline'} size={'xs'}>
+            Edit event
+          </Button>
+        </div>
+      </header>
+      {moments.length > 0 ? (
+        <Gallery
+          initialImages={initialImages}
+          eventId={event.id}
+          userId={user.id}
+        />
+      ) : (
+        <div>No moments to show</div>
+      )}
     </div>
   );
 }

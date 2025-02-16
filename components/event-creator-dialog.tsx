@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';

@@ -5,13 +5,14 @@ import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryState } from 'nuqs';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface GalleryImage {
   id: string;
   url: string | null;
+  name: string;
 }
 
 interface GalleryProps {
@@ -29,6 +30,11 @@ export default function EventGallery({
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useQueryState('image');
+  const [imageLoadingStates, setImageLoadingStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [carouselImageLoading, setCarouselImageLoading] = useState(false);
+
   const { ref, inView } = useInView();
 
   const supabase = createClient();
@@ -57,6 +63,7 @@ export default function EventGallery({
     const newImages = await Promise.all(
       newMoments.map(async (moment) => ({
         id: moment.id,
+        name: moment.name,
         url: await getPresignedUrl(moment.key),
       }))
     );
@@ -67,21 +74,24 @@ export default function EventGallery({
   }, [images, loading, hasMore, eventId, userId, supabase]);
 
   useEffect(() => {
-    if (inView) {
+    if (inView && selectedImageIndex === null) {
       loadMoreImages();
     }
-  }, [inView, loadMoreImages]);
+  }, [inView, loadMoreImages, selectedImageIndex]);
 
   const openCarousel = (index: number) => {
     setSelectedImageIndex(index.toString());
+    setCarouselImageLoading(true);
   };
 
   const closeCarousel = () => {
     setSelectedImageIndex(null);
+    setCarouselImageLoading(false);
   };
 
   const navigateCarousel = (direction: 'prev' | 'next') => {
     if (selectedImageIndex === null) return;
+    setCarouselImageLoading(true);
     const currentIndex = Number.parseInt(selectedImageIndex);
     const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
     if (newIndex >= 0 && newIndex < images.length) {
@@ -89,63 +99,116 @@ export default function EventGallery({
     }
   };
 
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedImageIndex === null) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        navigateCarousel('prev');
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        navigateCarousel('next');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeCarousel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImageIndex]);
+
+  const handleImageLoad = (imageId: string) => {
+    setImageLoadingStates((prev) => ({
+      ...prev,
+      [imageId]: true,
+    }));
+  };
+
+  const handleCarouselImageLoad = () => {
+    setCarouselImageLoading(false);
+  };
+
   return (
     <>
-      <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
         {images.map((image, index) =>
           image.url ? (
             <div
               key={image.id}
-              className='relative aspect-square overflow-hidden rounded-sm cursor-pointer'
+              className='relative aspect-[4/3] overflow-hidden cursor-pointer'
               onClick={() => openCarousel(index)}
             >
+              {!imageLoadingStates[image.id] && (
+                <div className='absolute inset-0 bg-gray-200 animate-pulse' />
+              )}
               <Image
                 src={image.url || '/placeholder.svg'}
                 alt='Event moment'
                 fill
-                sizes='(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw'
-                className='object-cover transition-transform duration-300 hover:scale-110'
+                sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+                className={`object-cover transition-transform duration-300 hover:scale-105 ${
+                  !imageLoadingStates[image.id] ? 'opacity-0' : 'opacity-100'
+                }`}
+                onLoad={() => handleImageLoad(image.id)}
               />
             </div>
           ) : null
         )}
       </div>
       {loading && (
-        <div className='text-center mt-4'>Loading more images...</div>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-4'>
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className='aspect-[4/3]' />
+          ))}
+        </div>
       )}
       <div ref={ref} className='h-10 mt-4' />
 
       <Dialog open={selectedImageIndex !== null} onOpenChange={closeCarousel}>
-        <DialogContent className='max-w-4xl w-full h-[80vh] p-0'>
+        <DialogContent
+          aria-describedby='photo gallery'
+          className='max-w-7xl w-full h-[90vh] p-0'
+        >
           {selectedImageIndex !== null && (
             <div className='relative w-full h-full flex items-center justify-center'>
+              {carouselImageLoading && (
+                <div className='absolute inset-0 animate-pulse' />
+              )}
               <Image
                 src={images[Number.parseInt(selectedImageIndex)].url || ''}
                 alt='Selected event moment'
                 fill
-                sizes='80vw'
-                className='object-contain'
+                sizes='90vw'
+                className={`object-contain transition-opacity duration-300 ${
+                  carouselImageLoading ? 'opacity-0' : 'opacity-100'
+                }`}
+                onLoad={handleCarouselImageLoad}
+                priority
               />
-              <Button
-                variant='ghost'
-                size='icon'
-                className='absolute left-2 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70'
+              <button
+                className='absolute left-3 top-1/2 rounded-sm -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 p-1'
                 onClick={() => navigateCarousel('prev')}
                 disabled={Number.parseInt(selectedImageIndex) === 0}
+                aria-label='Previous image'
               >
-                <ChevronLeft className='h-4 w-4' />
-              </Button>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='absolute right-2 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70'
+                <ChevronLeft className='h-6 w-6' />
+              </button>
+              <button
+                className='absolute right-3 rounded-sm top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 p-1'
                 onClick={() => navigateCarousel('next')}
                 disabled={
                   Number.parseInt(selectedImageIndex) === images.length - 1
                 }
+                aria-label='Next image'
               >
-                <ChevronRight className='h-4 w-4' />
-              </Button>
+                <ChevronRight className='h-6 w-6' />
+              </button>
+              <DialogTitle className='absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 p-2 rounded-sm text-xs'>
+                {images[Number.parseInt(selectedImageIndex)].name}
+              </DialogTitle>
             </div>
           )}
         </DialogContent>
