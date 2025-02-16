@@ -96,7 +96,7 @@ export default function EventGallery({
           image.url ? (
             <div
               key={image.id}
-              className='relative aspect-square overflow-hidden rounded-md cursor-pointer'
+              className='relative aspect-square overflow-hidden rounded-sm cursor-pointer'
               onClick={() => openCarousel(index)}
             >
               <Image
