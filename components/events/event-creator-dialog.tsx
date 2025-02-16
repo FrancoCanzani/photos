@@ -164,7 +164,7 @@ export function EventCreatorModal() {
           </div>
           <DialogFooter>
             <Button type='submit' size={'xs'}>
-              Create Event
+              {isLoading ? 'Saving event...' : 'Create Event'}
             </Button>
           </DialogFooter>
         </form>

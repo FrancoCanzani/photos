@@ -189,24 +189,24 @@ export default function EventGallery({
                 priority
               />
               <button
-                className='absolute left-3 top-1/2 rounded-sm -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 p-1'
+                className='absolute left-3 top-1/2 rounded-sm -translate-y-1/2 text-white bg-black/50 hover:bg-black/70'
                 onClick={() => navigateCarousel('prev')}
                 disabled={Number.parseInt(selectedImageIndex) === 0}
                 aria-label='Previous image'
               >
-                <ChevronLeft className='h-6 w-6' />
+                <ChevronLeft className='h-5 w-5' />
               </button>
               <button
-                className='absolute right-3 rounded-sm top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 p-1'
+                className='absolute right-3 rounded-sm top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70'
                 onClick={() => navigateCarousel('next')}
                 disabled={
                   Number.parseInt(selectedImageIndex) === images.length - 1
                 }
                 aria-label='Next image'
               >
-                <ChevronRight className='h-6 w-6' />
+                <ChevronRight className='h-5 w-5' />
               </button>
-              <DialogTitle className='absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 p-2 rounded-sm text-xs'>
+              <DialogTitle className='absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/30 p-1 rounded-sm text-xs'>
                 {images[Number.parseInt(selectedImageIndex)].name}
               </DialogTitle>
             </div>

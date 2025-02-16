@@ -6,8 +6,11 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import ShareEvent from '@/components/events/share-event';
 
-const Gallery = dynamic(() => import('../../../components/event-gallery'));
+const Gallery = dynamic(
+  () => import('../../../components/events/event-gallery')
+);
 
 async function getPresignedUrl(key: string) {
   try {
@@ -73,17 +76,18 @@ export default async function EventGalleryPage({
       <header className='flex items-center justify-between mb-8'>
         <div>
           <h2 className='font-medium text-2xl'>{event.name}</h2>
-          <p className='text-muted-foreground text-sm mt-1'>
+          <p className='text-muted-foreground hidden md:block text-sm mt-1'>
             Manage the event moments
           </p>
         </div>
-        <div className='flex items-center justify-center space-x-4'>
-          <Link className='text-xs hover:underline' href={'/events'}>
-            Events
-          </Link>
-          <Button variant={'outline'} size={'xs'}>
-            Edit event
+        <div className='flex items-center justify-center space-x-2'>
+          <Button variant={'outline'} size={'xs'} asChild>
+            <Link href={'/events'}>Events</Link>
           </Button>
+          <Button variant={'outline'} size={'xs'}>
+            Edit
+          </Button>
+          <ShareEvent eventId={eventId} userId={user.id} />
         </div>
       </header>
       {moments.length > 0 ? (

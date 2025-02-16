@@ -1,5 +1,5 @@
-import { EventCreatorModal } from '@/components/event-creator-dialog';
-import { EventCard } from '@/components/event-card';
+import { EventCreatorModal } from '@/components/events/event-creator-dialog';
+import { EventCard } from '@/components/events/event-card';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
