@@ -82,7 +82,9 @@ export function EventCreatorModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline'>Create New Event</Button>
+        <Button variant='outline' size={'xs'}>
+          New Event
+        </Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
@@ -104,11 +106,6 @@ export function EventCreatorModal() {
                 value={formData.name}
                 onChange={handleInputChange}
               />
-              {errors.name && (
-                <p className='col-span-3 col-start-2 text-sm text-red-500'>
-                  {errors.name}
-                </p>
-              )}
             </div>
             <div className='grid grid-cols-4 items-center gap-4'>
               <Label htmlFor='date' className='text-right'>
@@ -124,7 +121,6 @@ export function EventCreatorModal() {
                       !formData.date && 'text-muted-foreground'
                     )}
                   >
-                    <CalendarIcon className='mr-2 h-4 w-4' />
                     {formData.date ? (
                       format(formData.date, 'PPP')
                     ) : (
@@ -141,11 +137,6 @@ export function EventCreatorModal() {
                   />
                 </PopoverContent>
               </Popover>
-              {errors.date && (
-                <p className='col-span-3 col-start-2 text-sm text-red-500'>
-                  {errors.date}
-                </p>
-              )}
             </div>
             <div className='grid grid-cols-4 items-center gap-4'>
               <Label htmlFor='location' className='text-right'>
@@ -158,11 +149,6 @@ export function EventCreatorModal() {
                 value={formData.location}
                 onChange={handleInputChange}
               />
-              {errors.location && (
-                <p className='col-span-3 col-start-2 text-sm text-red-500'>
-                  {errors.location}
-                </p>
-              )}
             </div>
             <div className='grid grid-cols-4 items-center gap-4'>
               <Label htmlFor='notes' className='text-right'>
@@ -178,7 +164,9 @@ export function EventCreatorModal() {
             </div>
           </div>
           <DialogFooter>
-            <Button type='submit'>Create Event</Button>
+            <Button type='submit' size={'xs'}>
+              Create Event
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

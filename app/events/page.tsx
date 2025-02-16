@@ -23,8 +23,8 @@ export default async function EventsPage() {
     <div className='container max-w-6xl py-6'>
       <header className='flex items-center justify-between mb-8'>
         <div>
-          <h2 className='font-semibold text-2xl'>Events</h2>
-          <p className='text-muted-foreground mt-1'>
+          <h2 className='font-medium text-2xl'>Events</h2>
+          <p className='text-muted-foreground text-sm mt-1'>
             Manage and track your upcoming events
           </p>
         </div>
