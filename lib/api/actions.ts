@@ -16,7 +16,7 @@ async function listBuckets() {
   }
 }
 
-async function uploadFile(file: File) {
+async function uploadFile(file: File, key: string) {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
@@ -24,7 +24,7 @@ async function uploadFile(file: File) {
     const response = await s3Client.send(
       new PutObjectCommand({
         Bucket: 'tests',
-        Key: file.name,
+        Key: key,
         Body: uint8Array,
         ContentType: file.type,
       })

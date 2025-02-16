@@ -4,21 +4,24 @@ import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
 import { X } from 'lucide-react';
-import { listBuckets, uploadFile } from '@/lib/api/actions';
+import { uploadFile } from '@/lib/api/actions';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
-export function MultiMediaUploader() {
+export function MultiMediaUploader({ eventId }: { eventId: string }) {
   const supabase = createClient();
   const { userId } = useAuth();
-  const [files, setFles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const router = useRouter();
 
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 1000;
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      setFles((prevImages) => [...prevImages, ...acceptedFiles]);
+      setFiles((prevImages) => [...prevImages, ...acceptedFiles]);
     },
     [files]
   );
@@ -33,7 +36,7 @@ export function MultiMediaUploader() {
 
   const removeImage = (index: number) => {
     const newImages = files.filter((_, i) => i !== index);
-    setFles(newImages);
+    setFiles(newImages);
   };
 
   async function handleUploadFiles() {
@@ -48,25 +51,31 @@ export function MultiMediaUploader() {
       retryCount = 0
     ): Promise<boolean> => {
       try {
-        const response = await uploadFile(file);
+        const fileKey = `${file.name}-${self.crypto.randomUUID()}`;
 
-        console.log(response);
+        toast.loading(`Uploading ${file.name}...`);
+
+        const response = await uploadFile(file, fileKey);
 
         if (response?.$metadata.httpStatusCode === 200) {
-          const { data, error } = await supabase.from('photos').insert({
-            key: file.name,
+          const filePath = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/tests/${fileKey}`;
+
+          const { data, error } = await supabase.from('moments').insert({
+            key: fileKey,
+            name: file.name,
             user_id: userId,
             bucket: 'tests',
-            event_id: 1,
+            event_id: eventId,
             size: file.size,
             type: file.type,
             updated_at: new Date(),
-            file_path: '',
+            file_path: filePath,
           });
 
-          console.log(data);
-
           if (error) throw error;
+
+          toast.success(`Uploaded ${file.name}`);
+
           return true;
         }
         throw new Error('Upload failed');
@@ -75,6 +84,8 @@ export function MultiMediaUploader() {
           await delay(RETRY_DELAY * (retryCount + 1));
           return uploadWithRetry(file, retryCount + 1);
         }
+
+        toast.error(`Error uploading ${file.name}...`);
         return false;
       }
     };
@@ -82,6 +93,7 @@ export function MultiMediaUploader() {
     await Promise.all(
       files.map(async (file) => {
         const success = await uploadWithRetry(file);
+
         uploadResults.push({
           file,
           success,
@@ -90,7 +102,8 @@ export function MultiMediaUploader() {
       })
     );
 
-    setFles(files.filter((_, index) => !uploadResults[index].success));
+    setFiles(files.filter((_, index) => !uploadResults[index].success));
+    router.refresh();
 
     return uploadResults;
   }
@@ -139,8 +152,8 @@ export function MultiMediaUploader() {
       )}
 
       <div className='py-6 flex items-center justify-evenly'>
-        <button onClick={async () => await listBuckets()}>List buckets</button>
         <button
+          disabled={!files}
           onClick={() => {
             handleUploadFiles();
           }}

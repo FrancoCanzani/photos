@@ -18,7 +18,7 @@ export function EventCard({ event }: { event: Event }) {
       <CardHeader className='flex justify-between items-center pt-3'>
         <h3 className='text-sm font-medium text-gray-800'>{event.name}</h3>
         <span
-          className={`text-xs px-1.5 py-0.5 rounded-sm ${isUpcoming ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}
+          className={`text-xs px-1.5 py-0.5 rounded-sm ${isUpcoming ? 'bg-blue-50 text-blue-900' : 'bg-gray-50 text-gray-500'}`}
         >
           {isUpcoming ? 'Upcoming' : 'Past'}
         </span>
@@ -44,14 +44,18 @@ export function EventCard({ event }: { event: Event }) {
         )}
       </CardContent>
 
-      <CardFooter className='border-t bg-gray-50'>
+      <CardFooter className='border-t bg-gray-50 text-xs font-medium flex w-full items-center justify-between'>
         <Link
           href={`/events/${event.id}`}
-          className='text-xs font-medium text-blue-500 hover:text-blue-600 flex items-center group transition-all'
+          className='text-blue-500 hover:text-blue-600 flex items-center group transition-all'
         >
           Check event
           <ArrowRight className='w-3 h-3 ml-0.5 group-hover:translate-x-1 transition-transform duration-200' />
         </Link>
+        <div className='flex items-center justify-between space-x-2'>
+          <button>Edit</button>
+          <button>Delete</button>
+        </div>
       </CardFooter>
     </Card>
   );

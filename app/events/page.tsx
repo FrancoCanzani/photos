@@ -1,12 +1,17 @@
 import { EventCreatorModal } from '@/components/event-creator-dialog';
 import { EventCard } from '@/components/event-card';
 import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 export default async function EventsPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect('/sign-in');
+  }
 
   const { data: events, error } = await supabase
     .from('events')

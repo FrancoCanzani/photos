@@ -2,6 +2,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Geist } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import './globals.css';
 
 const defaultUrl = process.env.VERCEL_URL
@@ -33,16 +34,18 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main
-            className='min-h-screen max-w-5xl mx-auto flex flex-col justify-between items-stretch
+          <NuqsAdapter>
+            <main
+              className='min-h-screen max-w-5xl mx-auto flex flex-col justify-between items-stretch
           '
-          >
-            <div className='flex-1'>{children}</div>
-            <footer className='w-full flex items-center justify-center border-t mx-auto text-center text-xs'>
-              <ThemeSwitcher />
-            </footer>
-          </main>
-          <Toaster />
+            >
+              <div className='flex-1'>{children}</div>
+              <footer className='w-full flex items-center justify-center border-t mx-auto text-center text-xs'>
+                <ThemeSwitcher />
+              </footer>
+            </main>
+            <Toaster />
+          </NuqsAdapter>
         </ThemeProvider>
       </body>
     </html>
