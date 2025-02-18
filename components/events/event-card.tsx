@@ -1,3 +1,5 @@
+'use client';
+
 import { ArrowRight, Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -8,17 +10,18 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { type Event } from '@/lib/types';
+import { ConfirmActionDialog } from '../confirm-action-dialog';
 
 export function EventCard({ event }: { event: Event }) {
   const eventDate = event.date ? new Date(event.date) : null;
   const isUpcoming = eventDate ? eventDate > new Date() : false;
 
   return (
-    <Card className='rounded-sm space-y-3 border border-gray-100 dark:border-eerie hover:border-erie/80 transition-colors duration-200 bg-background'>
+    <Card className='rounded-xl space-y-3 border border-gray-100 dark:border-eerie hover:border-erie/80 transition-colors duration-200 bg-background'>
       <CardHeader className='flex justify-between items-center pt-3'>
         <h3 className='text-sm font-medium'>{event.name}</h3>
         <span
-          className={`text-xs px-1.5 py-0.5 rounded-sm ${isUpcoming ? 'bg-blue-50 dark:bg-eerie dark:text-blue-50 text-blue-900' : 'bg-gray-50 dark:bg-eerie text-gray-500 dark:text-gray-50'}`}
+          className={`text-xs px-1.5 py-0.5 rounded-xl ${isUpcoming ? 'bg-blue-50 dark:bg-eerie dark:text-blue-50 text-blue-900' : 'bg-gray-50 dark:bg-eerie text-gray-500 dark:text-gray-50'}`}
         >
           {isUpcoming ? 'Upcoming' : 'Past'}
         </span>
@@ -54,7 +57,14 @@ export function EventCard({ event }: { event: Event }) {
         </Link>
         <div className='flex items-center justify-between space-x-2'>
           <button>Edit</button>
-          <button>Delete</button>
+          <ConfirmActionDialog
+            description='This will permanently delete this event and all associated moments. 
+            This action cannot be undone.'
+            onConfirm={() => console.log('deleted event')}
+            title='Are you absolutely sure?'
+          >
+            <button>Delete</button>
+          </ConfirmActionDialog>
         </div>
       </CardFooter>
     </Card>

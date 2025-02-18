@@ -56,8 +56,6 @@ export default async function EventGalleryPage({
     .order('uploaded_at', { ascending: false })
     .limit(20);
 
-  console.log(moments);
-
   if (error) {
     console.error('Error fetching images:', error);
     return <div className='text-gray-500'>Error loading images.</div>;
@@ -66,6 +64,7 @@ export default async function EventGalleryPage({
   const initialImages = await Promise.all(
     (moments || []).map(async (moment) => ({
       id: moment.id,
+      key: moment.key,
       url: await getPresignedUrl(moment.key),
       name: moment.name,
     }))

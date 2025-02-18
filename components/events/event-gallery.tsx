@@ -6,18 +6,20 @@ import { useInView } from 'react-intersection-observer';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryState } from 'nuqs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { deleteMoment } from '@/lib/api/actions';
 
 interface GalleryImage {
-  id: string;
+  id: number;
   url: string | null;
+  key: string;
   name: string;
 }
 
 interface GalleryProps {
   initialImages: GalleryImage[];
-  eventId: string;
+  eventId: number;
   userId: string;
 }
 
@@ -64,9 +66,12 @@ export default function EventGallery({
       newMoments.map(async (moment) => ({
         id: moment.id,
         name: moment.name,
+        key: moment.key,
         url: await getPresignedUrl(moment.key),
       }))
     );
+
+    console.log(newImages);
 
     setImages((prevImages) => [...prevImages, ...newImages]);
     setHasMore(newImages.length === 20);
@@ -120,7 +125,7 @@ export default function EventGallery({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImageIndex]);
 
-  const handleImageLoad = (imageId: string) => {
+  const handleImageLoad = (imageId: number) => {
     setImageLoadingStates((prev) => ({
       ...prev,
       [imageId]: true,
@@ -131,6 +136,26 @@ export default function EventGallery({
     setCarouselImageLoading(false);
   };
 
+  async function downloadMoment(momentUrl: string, fileName: string) {
+    try {
+      const response = await fetch(momentUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up the blob URL
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  }
+
   return (
     <>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
@@ -138,7 +163,7 @@ export default function EventGallery({
           image.url ? (
             <div
               key={image.id}
-              className='relative aspect-[4/3] overflow-hidden cursor-pointer'
+              className='relative group aspect-[4/3] overflow-hidden cursor-pointer'
               onClick={() => openCarousel(index)}
             >
               {!imageLoadingStates[image.id] && (
@@ -206,8 +231,40 @@ export default function EventGallery({
               >
                 <ChevronRight className='h-5 w-5' />
               </button>
-              <DialogTitle className='absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/30 p-1 rounded-sm text-xs'>
-                {images[Number.parseInt(selectedImageIndex)].name}
+              <DialogTitle className='absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center space-x-4'>
+                <span className='text-white bg-black/30 p-1 rounded-sm text-xs'>
+                  {images[Number.parseInt(selectedImageIndex)].name}
+                </span>
+                <div className='flex items-center justify-center space-x-2'>
+                  <button
+                    className='text-white bg-black/30 p-1 rounded-sm text-xs'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!images[Number.parseInt(selectedImageIndex)].url)
+                        return;
+                      downloadMoment(
+                        images[Number.parseInt(selectedImageIndex)].url,
+                        images[Number.parseInt(selectedImageIndex)].name
+                      );
+                    }}
+                  >
+                    Download
+                  </button>
+                  <button
+                    className='text-white bg-black/30 p-1 rounded-sm text-xs'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (images[Number.parseInt(selectedImageIndex)].url) {
+                        deleteMoment(
+                          images[Number.parseInt(selectedImageIndex)].url,
+                          images[Number.parseInt(selectedImageIndex)].id
+                        );
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </DialogTitle>
             </div>
           )}

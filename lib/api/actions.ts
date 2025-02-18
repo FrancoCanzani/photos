@@ -1,7 +1,11 @@
 'use server';
 
 import { s3Client } from '../s3';
-import { ListBucketsCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  ListBucketsCommand,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { z } from 'zod';
 import { createClient } from '../supabase/server';
 import { revalidatePath } from 'next/cache';
@@ -74,4 +78,37 @@ export async function createEvent(data: EventFormData) {
   }
 }
 
-export { listBuckets, uploadFile };
+async function deleteMoment(key: string, momentId: number) {
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: 'tests',
+      Key: key,
+    });
+
+    const s3Response = await s3Client.send(command);
+
+    const supabase = await createClient();
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData?.user?.id) {
+      return { error: 'User authentication failed' };
+    }
+
+    const { data: deletedMoment, error: dbError } = await supabase
+      .from('moments')
+      .delete()
+      .eq('id', momentId)
+      .eq('user_id', authData.user.id)
+      .single();
+
+    if (dbError) {
+      return { error: dbError.message };
+    }
+
+    return { s3Response, deletedMoment };
+  } catch (error) {
+    return { error: 'Something went wrong' };
+  }
+}
+
+export { listBuckets, uploadFile, deleteMoment };
