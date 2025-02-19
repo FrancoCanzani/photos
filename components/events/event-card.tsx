@@ -11,10 +11,35 @@ import {
 } from '@/components/ui/card';
 import { type Event } from '@/lib/types';
 import { ConfirmActionDialog } from '../confirm-action-dialog';
+import { useState } from 'react';
+import { deleteEvent } from '@/lib/api/actions';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export function EventCard({ event }: { event: Event }) {
   const eventDate = event.date ? new Date(event.date) : null;
   const isUpcoming = eventDate ? eventDate > new Date() : false;
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
+
+  async function handleDeleteEvent(eventId: number) {
+    try {
+      setIsDeleting(true);
+      const result = await deleteEvent(eventId);
+
+      if (result?.error) {
+        toast.error('Error deleting event. Try again later');
+        return;
+      }
+
+      toast.success(`Event ${event.name} deleted succesfully`);
+      router.refresh();
+    } catch (error) {
+      toast.error('Error deleting event. Try again later');
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   return (
     <Card className='rounded-xl space-y-3 border border-gray-100 dark:border-eerie hover:border-erie/80 transition-colors duration-200 bg-background'>
@@ -60,10 +85,12 @@ export function EventCard({ event }: { event: Event }) {
           <ConfirmActionDialog
             description='This will permanently delete this event and all associated moments. 
             This action cannot be undone.'
-            onConfirm={() => console.log('deleted event')}
+            onConfirm={() => handleDeleteEvent(event.id)}
             title='Are you absolutely sure?'
           >
-            <button>Delete</button>
+            <button disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </button>
           </ConfirmActionDialog>
         </div>
       </CardFooter>
