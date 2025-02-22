@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import ShareEvent from '@/components/events/share-event';
 import MultiMediaUploadDialog from '@/components/multi-media-uploader';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable } from '../data-table';
+import { columns } from '../columns';
 
 const Gallery = dynamic(
   () => import('../../../components/events/event-gallery')
@@ -96,19 +99,40 @@ export default async function EventGalleryPage({
           <MultiMediaUploadDialog eventId={eventId} />
         </div>
       </header>
-      {moments.length > 0 ? (
-        <Gallery
-          initialImages={initialImages}
-          eventId={event.id}
-          userId={user.id}
-        />
-      ) : (
-        <div className='text-center flex items-center justify-center flex-1'>
-          <p className='text-muted-foreground text-balance'>
-            No moments yet. Create your first one to start sharing moments!
-          </p>
-        </div>
-      )}
+      <Tabs defaultValue='tab-1' className='items-start'>
+        <TabsList className='text-foreground h-auto gap-2 rounded-none border-b bg-transparent px-0 py-1'>
+          <TabsTrigger
+            value='tab-1'
+            className='hover:bg-accent hover:text-foreground data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none'
+          >
+            Moments
+          </TabsTrigger>
+          <TabsTrigger
+            value='tab-2'
+            className='hover:bg-accent hover:text-foreground data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none'
+          >
+            Table
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value='tab-1' className='w-full'>
+          {moments.length > 0 ? (
+            <Gallery
+              initialImages={initialImages}
+              eventId={event.id}
+              userId={user.id}
+            />
+          ) : (
+            <div className='text-center flex items-center justify-center flex-1'>
+              <p className='text-muted-foreground text-balance'>
+                No moments yet. Create your first one to start sharing moments!
+              </p>
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value='tab-2' className='w-full'>
+          <DataTable columns={columns} data={moments} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

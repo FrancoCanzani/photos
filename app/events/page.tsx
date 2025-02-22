@@ -30,6 +30,7 @@ export default async function EventsPage() {
         </div>
         <EventCreatorModal />
       </header>
+
       {events?.length === 0 ? (
         <div className='text-center flex items-center justify-center flex-1'>
           <p className='text-muted-foreground text-balance'>
