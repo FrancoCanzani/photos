@@ -42,7 +42,7 @@ export function EventCard({ event }: { event: Event }) {
   }
 
   return (
-    <Card className='rounded-md space-y-3 border border-gray-100 dark:border-eerie hover:border-erie/80 transition-colors duration-200 bg-background'>
+    <Card className='rounded-md hover:shadow space-y-3 border border-gray-100 dark:border-eerie hover:border-erie/80 transition-all duration-200 bg-background'>
       <CardHeader className='flex justify-between items-center pt-3'>
         <h3 className='text-sm font-medium'>{event.name}</h3>
         <span
