@@ -124,7 +124,7 @@ export default function ShareEvent({ eventId, userId }: ShareManagementProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant='outline' size='xs'>
+        <Button variant='outline' size='sm'>
           Share
         </Button>
       </DialogTrigger>
@@ -213,14 +213,14 @@ export default function ShareEvent({ eventId, userId }: ShareManagementProps) {
                     <div className='flex items-center space-x-1.5'>
                       <Button
                         variant='ghost'
-                        size='xs'
+                        size={'sm'}
                         onClick={() => copyLink(link.token)}
                       >
                         <Copy className='w-3 h-3' />
                       </Button>
                       <Button
                         variant='ghost'
-                        size='xs'
+                        size={'sm'}
                         onClick={() => deactivateLink(link.id)}
                       >
                         <Trash className='w-3 h-3' />

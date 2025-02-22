@@ -68,6 +68,7 @@ export async function uploadFile(
       })
     );
 
+    revalidatePath('/events/[id]', 'page');
     return { data: response };
   } catch (error) {
     const serviceError = error as S3ServiceException;

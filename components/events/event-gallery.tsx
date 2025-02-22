@@ -163,7 +163,7 @@ export default function EventGallery({
           image.url ? (
             <div
               key={image.id}
-              className='relative group aspect-[4/3] overflow-hidden cursor-pointer'
+              className='relative group rounded-md aspect-[4/3] overflow-hidden cursor-pointer'
               onClick={() => openCarousel(index)}
             >
               {!imageLoadingStates[image.id] && (
@@ -174,7 +174,7 @@ export default function EventGallery({
                 alt='Event moment'
                 fill
                 sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-                className={`object-cover transition-transform duration-300 hover:scale-105 ${
+                className={`object-cover transition-transform duration-300 rounded-md hover:scale-105 ${
                   !imageLoadingStates[image.id] ? 'opacity-0' : 'opacity-100'
                 }`}
                 onLoad={() => handleImageLoad(image.id)}

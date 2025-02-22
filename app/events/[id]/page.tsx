@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import ShareEvent from '@/components/events/share-event';
+import MultiMediaUploadDialog from '@/components/multi-media-uploader';
 
 const Gallery = dynamic(
   () => import('../../../components/events/event-gallery')
@@ -80,13 +81,14 @@ export default async function EventGalleryPage({
           </p>
         </div>
         <div className='flex items-center justify-center space-x-2'>
-          <Button variant={'outline'} size={'xs'} asChild>
+          <Button variant={'outline'} size={'sm'} asChild>
             <Link href={'/events'}>Events</Link>
           </Button>
-          <Button variant={'outline'} size={'xs'}>
+          <Button variant={'outline'} size={'sm'}>
             Edit
           </Button>
           <ShareEvent eventId={eventId} userId={user.id} />
+          <MultiMediaUploadDialog eventId={eventId} />
         </div>
       </header>
       {moments.length > 0 ? (
@@ -96,7 +98,11 @@ export default async function EventGalleryPage({
           userId={user.id}
         />
       ) : (
-        <div>No moments to show</div>
+        <div className='text-center flex items-center justify-center flex-1'>
+          <p className='text-muted-foreground text-balance'>
+            No moments yet. Create your first one to start sharing moments!
+          </p>
+        </div>
       )}
     </div>
   );
