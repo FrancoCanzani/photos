@@ -47,6 +47,11 @@ export default async function EventGalleryPage({
     .eq('user_id', user.id)
     .single();
 
+  const { data: links } = await supabase
+    .from('links')
+    .select()
+    .eq('event_id', eventId);
+
   if (!event) return <div className='text-gray-500'>Event not found.</div>;
 
   const { data: moments, error } = await supabase
@@ -76,7 +81,7 @@ export default async function EventGalleryPage({
       <header className='flex items-center justify-between mb-8'>
         <div>
           <h2 className='font-medium text-2xl'>{event.name}</h2>
-          <p className='text-muted-foreground hidden md:block text-sm mt-1'>
+          <p className='text-muted-foreground hidden sm:block text-sm mt-1'>
             Manage the event moments
           </p>
         </div>
@@ -87,7 +92,7 @@ export default async function EventGalleryPage({
           <Button variant={'outline'} size={'sm'}>
             Edit
           </Button>
-          <ShareEvent eventId={eventId} userId={user.id} />
+          <ShareEvent eventId={eventId} links={links} />
           <MultiMediaUploadDialog eventId={eventId} />
         </div>
       </header>

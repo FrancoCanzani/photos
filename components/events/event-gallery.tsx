@@ -57,7 +57,6 @@ export default function EventGallery({
       .limit(20);
 
     if (error) {
-      console.error('Error fetching more images:', error);
       setLoading(false);
       return;
     }
@@ -232,7 +231,10 @@ export default function EventGallery({
                 <ChevronRight className='h-5 w-5' />
               </button>
               <DialogTitle className='absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center space-x-4'>
-                <span className='text-white bg-black/30 p-1 rounded-sm text-xs'>
+                <span
+                  title={images[Number.parseInt(selectedImageIndex)].name}
+                  className='text-white bg-black/30 p-1 rounded-sm text-xs truncate w-1/2'
+                >
                   {images[Number.parseInt(selectedImageIndex)].name}
                 </span>
                 <div className='flex items-center justify-center space-x-2'>
