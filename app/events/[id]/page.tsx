@@ -114,7 +114,7 @@ export default async function EventGalleryPage({
             Table
           </TabsTrigger>
         </TabsList>
-        <TabsContent value='tab-1' className='w-full'>
+        <TabsContent value='tab-1' className='w-full pt-6'>
           {moments.length > 0 ? (
             <Gallery
               initialImages={initialImages}
@@ -129,7 +129,7 @@ export default async function EventGalleryPage({
             </div>
           )}
         </TabsContent>
-        <TabsContent value='tab-2' className='w-full'>
+        <TabsContent value='tab-2' className='w-full pt-6'>
           <DataTable columns={columns} data={moments} />
         </TabsContent>
       </Tabs>

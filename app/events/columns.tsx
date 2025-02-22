@@ -55,7 +55,7 @@ export const columns: ColumnDef<Moment>[] = [
       </button>
     ),
     cell: ({ row }) => (
-      <div className='truncate whitespace-nowrap max-w-[250px]'>
+      <div className='truncate whitespace-nowrap font-medium max-w-[250px]'>
         {row.getValue('name')}
       </div>
     ),
@@ -106,6 +106,9 @@ export const columns: ColumnDef<Moment>[] = [
           Type
         </button>
       );
+    },
+    cell: ({ row }) => {
+      return <div className='capitalize'>{row.getValue('type')}</div>;
     },
   },
 ];
