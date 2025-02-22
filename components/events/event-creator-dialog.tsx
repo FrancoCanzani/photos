@@ -63,7 +63,7 @@ export function EventCreatorModal() {
       const result = await createEvent(formData);
 
       if (result.error) {
-        toast.error(result.error);
+        toast.error('Error creating event. Try again later!');
         return;
       }
 
@@ -72,7 +72,7 @@ export function EventCreatorModal() {
       setFormData(initialFormData);
       setErrors({});
     } catch (error) {
-      toast.error('Failed to create event');
+      toast.error('Failed to create event. Try again later!');
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +81,7 @@ export function EventCreatorModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline' size={'xs'}>
+        <Button variant='outline' size={'sm'}>
           New Event
         </Button>
       </DialogTrigger>

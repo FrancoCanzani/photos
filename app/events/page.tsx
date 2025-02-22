@@ -20,7 +20,7 @@ export default async function EventsPage() {
     .order('date', { ascending: true });
 
   return (
-    <div className='container max-w-6xl py-6'>
+    <div className='container flex-1 max-w-6xl py-6 h-full flex flex-col'>
       <header className='flex items-center justify-between mb-8'>
         <div>
           <h2 className='font-medium text-2xl'>Events</h2>
@@ -30,11 +30,10 @@ export default async function EventsPage() {
         </div>
         <EventCreatorModal />
       </header>
-
       {events?.length === 0 ? (
-        <div className='text-center py-12'>
-          <p className='text-muted-foreground'>
-            No events yet. Create your first one!
+        <div className='text-center flex items-center justify-center flex-1'>
+          <p className='text-muted-foreground text-balance'>
+            No events yet. Create your first one to start sharing moments!
           </p>
         </div>
       ) : (
