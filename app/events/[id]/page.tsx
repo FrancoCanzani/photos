@@ -114,19 +114,11 @@ export default async function EventGalleryPage({
           </TabsTrigger>
         </TabsList>
         <TabsContent value='tab-1' className='w-full pt-4'>
-          {moments.length > 0 ? (
-            <Gallery
-              initialImages={initialImages}
-              eventId={event.id}
-              userId={user.id}
-            />
-          ) : (
-            <div className='text-center flex items-center justify-center flex-1'>
-              <p className='text-muted-foreground text-balance'>
-                No moments yet. Create your first one to start sharing moments!
-              </p>
-            </div>
-          )}
+          <Gallery
+            initialImages={initialImages}
+            eventId={event.id}
+            userId={user.id}
+          />
         </TabsContent>
         <TabsContent value='tab-2' className='w-full pt-4'>
           <MomentsTable eventId={parseInt(eventId)} />

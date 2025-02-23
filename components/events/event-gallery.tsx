@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useQueryState } from 'nuqs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { deleteMoment } from '@/lib/api/actions';
 
 interface GalleryImage {
@@ -183,10 +182,8 @@ export default function EventGallery({
         )}
       </div>
       {loading && (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-4'>
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className='aspect-[4/3]' />
-          ))}
+        <div className='py-12 w-full flex items-center justify-center text-sm text-muted-foreground'>
+          <span>Loading more images...</span>
         </div>
       )}
       <div ref={ref} className='h-10 mt-4' />
