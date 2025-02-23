@@ -9,8 +9,7 @@ import Link from 'next/link';
 import ShareEvent from '@/components/events/share-event';
 import MultiMediaUploadDialog from '@/components/multi-media-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataTable } from '../data-table';
-import { columns } from '../columns';
+import MomentsTable from '@/components/moments-table';
 
 const Gallery = dynamic(
   () => import('../../../components/events/event-gallery')
@@ -114,7 +113,7 @@ export default async function EventGalleryPage({
             Table
           </TabsTrigger>
         </TabsList>
-        <TabsContent value='tab-1' className='w-full pt-6'>
+        <TabsContent value='tab-1' className='w-full pt-4'>
           {moments.length > 0 ? (
             <Gallery
               initialImages={initialImages}
@@ -129,8 +128,8 @@ export default async function EventGalleryPage({
             </div>
           )}
         </TabsContent>
-        <TabsContent value='tab-2' className='w-full pt-6'>
-          <DataTable columns={columns} data={moments} />
+        <TabsContent value='tab-2' className='w-full pt-4'>
+          <MomentsTable eventId={parseInt(eventId)} />
         </TabsContent>
       </Tabs>
     </div>
