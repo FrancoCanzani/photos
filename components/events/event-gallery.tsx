@@ -8,6 +8,8 @@ import { useQueryState } from 'nuqs';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { deleteMoment } from '@/lib/api/actions';
+import { Circle, CircleCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface GalleryImage {
   id: number;
@@ -35,6 +37,7 @@ export default function EventGallery({
     Record<string, boolean>
   >({});
   const [carouselImageLoading, setCarouselImageLoading] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<number[] | null>(null);
 
   const { ref, inView } = useInView();
 
@@ -154,6 +157,16 @@ export default function EventGallery({
     }
   }
 
+  function handleImageSelection(image: GalleryImage) {
+    if (selectedImages?.includes(image.id)) {
+      setSelectedImages(selectedImages.filter((id) => id !== image.id));
+    } else {
+      setSelectedImages(
+        selectedImages ? [...selectedImages, image.id] : [image.id]
+      );
+    }
+  }
+
   return (
     <>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1'>
@@ -161,7 +174,7 @@ export default function EventGallery({
           image.url ? (
             <div
               key={image.id}
-              className='relative group aspect-[4/3] overflow-hidden cursor-pointer'
+              className='relative group group aspect-[4/3] overflow-hidden cursor-pointer'
               onClick={() => openCarousel(index)}
             >
               <Image
@@ -174,6 +187,22 @@ export default function EventGallery({
                 }`}
                 onLoad={() => handleImageLoad(image.id)}
               />
+              <button
+                className={cn(
+                  'absolute group-hover:block hidden left-2 top-2 rounded-full text-white bg-black/50 hover:bg-black/70',
+                  selectedImages?.includes(image.id) ? 'block' : 'hidden'
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleImageSelection(image);
+                }}
+              >
+                {selectedImages?.includes(image.id) ? (
+                  <CircleCheck className='h-5 w-5' />
+                ) : (
+                  <Circle className='h-5 w-5' />
+                )}
+              </button>
             </div>
           ) : null
         )}
