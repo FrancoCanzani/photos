@@ -164,9 +164,6 @@ export default function EventGallery({
               className='relative group aspect-[4/3] overflow-hidden cursor-pointer'
               onClick={() => openCarousel(index)}
             >
-              {!imageLoadingStates[image.id] && (
-                <div className='absolute inset-0 bg-gray-200 animate-pulse' />
-              )}
               <Image
                 src={image.url || '/placeholder.svg'}
                 alt='Event moment'
