@@ -289,3 +289,79 @@ export async function deleteMoment(
     };
   }
 }
+
+export async function updateEvent(
+  eventId: number,
+  data: EventFormData
+): Promise<ServiceResponse<any>> {
+  if (!eventId || !data) {
+    return {
+      error: {
+        message: 'Event ID and data are required',
+        code: 'INVALID_PARAMETERS',
+      },
+    };
+  }
+
+  try {
+    const validatedData = eventSchema.parse(data);
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        error: {
+          message: 'Authentication failed',
+          code: 'AUTH_ERROR',
+        },
+      };
+    }
+
+    const { data: updatedEvent, error } = await supabase
+      .from('events')
+      .update({
+        name: validatedData.name,
+        date: validatedData.date.toISOString(),
+        location: validatedData.location,
+        notes: validatedData.notes || '',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', eventId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        error: {
+          message: error.message,
+          code: error.code,
+        },
+      };
+    }
+
+    revalidatePath('/events');
+    revalidatePath(`/events/${eventId}`);
+
+    return { data: updatedEvent };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return {
+        error: {
+          message: error.errors[0].message,
+          code: 'VALIDATION_ERROR',
+        },
+      };
+    }
+    return {
+      error: {
+        message: 'Failed to update event',
+        code: 'UNKNOWN_ERROR',
+      },
+    };
+  }
+}

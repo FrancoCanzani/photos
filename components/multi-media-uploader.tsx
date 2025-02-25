@@ -147,9 +147,7 @@ export default function MultiMediaUploadDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline' size={'sm'}>
-          Upload Media
-        </Button>
+        <button className='hover:underline'>Upload Media</button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-xl'>
         <DialogHeader>

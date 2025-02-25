@@ -134,9 +134,7 @@ export default function ShareEvent({ eventId, links }: ShareEventProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant='outline' size='sm'>
-          Share
-        </Button>
+        <button className='hover:underline'>Share</button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>

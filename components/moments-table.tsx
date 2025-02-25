@@ -18,7 +18,18 @@ export default async function MomentsTable({ eventId }: { eventId: number }) {
     .eq('user_id', user.id)
     .order('uploaded_at', { ascending: false });
 
-  if (!moments) return <div className='text-gray-500'>No moments found.</div>;
+  if (error) {
+    console.error('Error fetching moments:', error);
+    return <div className='text-gray-500'>Error loading moments.</div>;
+  }
 
-  return <DataTable columns={columns} data={moments} />;
+  if (!moments || moments.length === 0) {
+    return <div className='text-gray-500'>No moments found.</div>;
+  }
+
+  return (
+    <div className='w-full'>
+      <DataTable columns={columns} data={moments} />
+    </div>
+  );
 }

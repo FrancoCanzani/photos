@@ -4,12 +4,12 @@ import { s3Client } from '@/lib/s3';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dynamic from 'next/dynamic';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import ShareEvent from '@/components/events/share-event';
 import MultiMediaUploadDialog from '@/components/multi-media-uploader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MomentsTable from '@/components/moments-table';
+import { EventEditorDialog } from '@/components/events/event-editor-dialog';
 
 const Gallery = dynamic(
   () => import('../../../components/events/event-gallery')
@@ -87,13 +87,11 @@ export default async function EventGalleryPage({
             Manage the event moments
           </p>
         </div>
-        <div className='flex items-center justify-center space-x-2'>
-          <Button variant={'outline'} size={'sm'} asChild>
-            <Link href={'/events'}>Events</Link>
-          </Button>
-          <Button variant={'outline'} size={'sm'}>
-            Edit
-          </Button>
+        <div className='flex items-center font-medium text-sm justify-center space-x-4'>
+          <Link href={'/events'} className='hover:underline'>
+            Events
+          </Link>
+          <EventEditorDialog event={event} />
           <ShareEvent eventId={eventId} links={links} />
           <MultiMediaUploadDialog eventId={eventId} />
         </div>
