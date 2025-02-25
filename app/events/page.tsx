@@ -1,7 +1,7 @@
-import { EventCreatorModal } from '@/components/events/event-creator-dialog';
 import { EventCard } from '@/components/events/event-card';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 export default async function EventsPage() {
   const supabase = await createClient();
@@ -28,7 +28,12 @@ export default async function EventsPage() {
             Manage and track your upcoming events
           </p>
         </div>
-        <EventCreatorModal />
+        <Link
+          href='/events/new'
+          className='hover:underline font-medium text-sm'
+        >
+          New Event
+        </Link>
       </header>
 
       {events?.length === 0 ? (
