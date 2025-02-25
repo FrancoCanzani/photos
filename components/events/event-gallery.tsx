@@ -1,24 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
-import { createClient } from '@/lib/supabase/client';
 import { useQueryState } from 'nuqs';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { deleteMoment } from '@/lib/api/actions';
-import { Circle, CircleCheck } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
+import { GalleryImage } from '@/lib/types';
+import GalleryGrid from './gallery-grid';
+import EventGalleryDialog from './gallery-image-dialog';
 
-interface GalleryImage {
-  id: number;
-  url: string | null;
-  key: string;
-  name: string;
-}
-
-interface GalleryProps {
+interface EventGalleryProps {
   initialImages: GalleryImage[];
   eventId: number;
   userId: string;
@@ -28,55 +18,53 @@ export default function EventGallery({
   initialImages,
   eventId,
   userId,
-}: GalleryProps) {
+}: EventGalleryProps) {
   const [images, setImages] = useState<GalleryImage[]>(initialImages);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(true);
   const [selectedImageIndex, setSelectedImageIndex] = useQueryState('image');
-  const [imageLoadingStates, setImageLoadingStates] = useState<
-    Record<string, boolean>
-  >({});
-  const [carouselImageLoading, setCarouselImageLoading] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<number[] | null>(null);
+  const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set());
 
   const { ref, inView } = useInView();
-
   const supabase = createClient();
 
   const loadMoreImages = useCallback(async () => {
     if (loading || !hasMore) return;
 
     setLoading(true);
-    const lastImageId = images[images.length - 1]?.id;
+    try {
+      const lastImageId = images[images.length - 1]?.id;
 
-    const { data: newMoments, error } = await supabase
-      .from('moments')
-      .select()
-      .eq('event_id', eventId)
-      .eq('user_id', userId)
-      .lt('id', lastImageId)
-      .order('uploaded_at', { ascending: false })
-      .limit(20);
+      const { data: newMoments, error } = await supabase
+        .from('moments')
+        .select()
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .lt('id', lastImageId)
+        .order('uploaded_at', { ascending: false })
+        .limit(20);
 
-    if (error) {
+      if (error) {
+        console.error('Error loading more images:', error);
+        return;
+      }
+
+      const newImages = await Promise.all(
+        newMoments.map(async (moment) => ({
+          id: moment.id,
+          name: moment.name,
+          key: moment.key,
+          url: await getPresignedUrl(moment.key),
+        }))
+      );
+
+      setImages((prevImages) => [...prevImages, ...newImages]);
+      setHasMore(newImages.length === 20);
+    } catch (error) {
+      console.error('Failed to load more images:', error);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const newImages = await Promise.all(
-      newMoments.map(async (moment) => ({
-        id: moment.id,
-        name: moment.name,
-        key: moment.key,
-        url: await getPresignedUrl(moment.key),
-      }))
-    );
-
-    console.log(newImages);
-
-    setImages((prevImages) => [...prevImages, ...newImages]);
-    setHasMore(newImages.length === 20);
-    setLoading(false);
   }, [images, loading, hasMore, eventId, userId, supabase]);
 
   useEffect(() => {
@@ -87,226 +75,68 @@ export default function EventGallery({
 
   const openCarousel = (index: number) => {
     setSelectedImageIndex(index.toString());
-    setCarouselImageLoading(true);
   };
 
   const closeCarousel = () => {
     setSelectedImageIndex(null);
-    setCarouselImageLoading(false);
   };
 
-  const navigateCarousel = (direction: 'prev' | 'next') => {
-    if (selectedImageIndex === null) return;
-    setCarouselImageLoading(true);
-    const currentIndex = Number.parseInt(selectedImageIndex);
-    const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex >= 0 && newIndex < images.length) {
-      setSelectedImageIndex(newIndex.toString());
-    }
-  };
-
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedImageIndex === null) return;
-
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        navigateCarousel('prev');
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        navigateCarousel('next');
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        closeCarousel();
+  const handleImageSelection = (imageId: number) => {
+    setSelectedImages((prev) => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(imageId)) {
+        newSelection.delete(imageId);
+      } else {
+        newSelection.add(imageId);
       }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedImageIndex]);
-
-  const handleImageLoad = (imageId: number) => {
-    setImageLoadingStates((prev) => ({
-      ...prev,
-      [imageId]: true,
-    }));
+      return newSelection;
+    });
   };
 
-  const handleCarouselImageLoad = () => {
-    setCarouselImageLoading(false);
-  };
-
-  async function downloadMoment(momentUrl: string, fileName: string) {
-    try {
-      const response = await fetch(momentUrl);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up the blob URL
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download failed:', error);
-    }
-  }
-
-  function handleImageSelection(image: GalleryImage) {
-    if (selectedImages?.includes(image.id)) {
-      setSelectedImages(selectedImages.filter((id) => id !== image.id));
-    } else {
-      setSelectedImages(
-        selectedImages ? [...selectedImages, image.id] : [image.id]
-      );
-    }
-  }
+  const currentImageIndex = selectedImageIndex
+    ? parseInt(selectedImageIndex, 10)
+    : null;
 
   return (
     <>
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1'>
-        {images.map((image, index) =>
-          image.url ? (
-            <div
-              key={image.id}
-              className='relative group group aspect-[4/3] overflow-hidden cursor-pointer'
-              onClick={() => openCarousel(index)}
-            >
-              <Image
-                src={image.url || '/placeholder.svg'}
-                alt='Event moment'
-                fill
-                sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-                className={`object-cover transition-transform duration-300 hover:scale-105 ${
-                  !imageLoadingStates[image.id] ? 'opacity-0' : 'opacity-100'
-                }`}
-                onLoad={() => handleImageLoad(image.id)}
-              />
-              <button
-                className={cn(
-                  'absolute group-hover:block hidden left-2 top-2 rounded-full text-white bg-black/50 hover:bg-black/70',
-                  selectedImages?.includes(image.id) ? 'block' : 'hidden'
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleImageSelection(image);
-                }}
-              >
-                {selectedImages?.includes(image.id) ? (
-                  <CircleCheck className='h-5 w-5' />
-                ) : (
-                  <Circle className='h-5 w-5' />
-                )}
-              </button>
-            </div>
-          ) : null
-        )}
-      </div>
+      <GalleryGrid
+        images={images}
+        onImageClick={openCarousel}
+        selectedImages={selectedImages}
+        onImageSelection={handleImageSelection}
+      />
+
       {loading && (
         <div className='py-12 w-full flex items-center justify-center text-sm text-muted-foreground'>
           <span>Loading more images...</span>
         </div>
       )}
+
       <div ref={ref} className='h-10 mt-4' />
 
-      <Dialog open={selectedImageIndex !== null} onOpenChange={closeCarousel}>
-        <DialogContent
-          aria-describedby='photo gallery'
-          className='max-w-7xl w-full h-[90vh] p-0'
-        >
-          {selectedImageIndex !== null && (
-            <div className='relative w-full h-full flex items-center justify-center'>
-              {carouselImageLoading && (
-                <div className='absolute inset-0 animate-pulse' />
-              )}
-              <Image
-                src={images[Number.parseInt(selectedImageIndex)].url || ''}
-                alt='Selected event moment'
-                fill
-                sizes='90vw'
-                className={`object-contain transition-opacity duration-300 ${
-                  carouselImageLoading ? 'opacity-0' : 'opacity-100'
-                }`}
-                onLoad={handleCarouselImageLoad}
-                priority
-              />
-              <button
-                className='absolute left-3 top-1/2 rounded-sm -translate-y-1/2 text-white bg-black/50 hover:bg-black/70'
-                onClick={() => navigateCarousel('prev')}
-                disabled={Number.parseInt(selectedImageIndex) === 0}
-                aria-label='Previous image'
-              >
-                <ChevronLeft className='h-5 w-5' />
-              </button>
-              <button
-                className='absolute right-3 rounded-sm top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70'
-                onClick={() => navigateCarousel('next')}
-                disabled={
-                  Number.parseInt(selectedImageIndex) === images.length - 1
-                }
-                aria-label='Next image'
-              >
-                <ChevronRight className='h-5 w-5' />
-              </button>
-              <DialogTitle className='absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center space-x-4'>
-                <span
-                  title={images[Number.parseInt(selectedImageIndex)].name}
-                  className='text-white bg-black/30 p-1 rounded-sm text-xs truncate w-1/2'
-                >
-                  {images[Number.parseInt(selectedImageIndex)].name}
-                </span>
-                <div className='flex items-center justify-center space-x-2'>
-                  <button
-                    className='text-white bg-black/30 p-1 rounded-sm text-xs'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!images[Number.parseInt(selectedImageIndex)].url)
-                        return;
-                      downloadMoment(
-                        images[Number.parseInt(selectedImageIndex)].url,
-                        images[Number.parseInt(selectedImageIndex)].name
-                      );
-                    }}
-                  >
-                    Download
-                  </button>
-                  <button
-                    className='text-white bg-black/30 p-1 rounded-sm text-xs'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (images[Number.parseInt(selectedImageIndex)].url) {
-                        deleteMoment(
-                          images[Number.parseInt(selectedImageIndex)].url,
-                          images[Number.parseInt(selectedImageIndex)].id
-                        );
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </DialogTitle>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <EventGalleryDialog
+        isOpen={currentImageIndex !== null}
+        onClose={closeCarousel}
+        images={images}
+        currentIndex={currentImageIndex}
+        setCurrentIndex={(index) => setSelectedImageIndex(index.toString())}
+      />
     </>
   );
 }
 
-async function getPresignedUrl(key: string) {
-  const response = await fetch(
-    `/api/presigned-url?key=${encodeURIComponent(key)}`
-  );
-  if (!response.ok) {
-    console.error('Error fetching presigned URL');
+async function getPresignedUrl(key: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `/api/presigned-url?key=${encodeURIComponent(key)}`
+    );
+    if (!response.ok) {
+      throw new Error(`Error fetching presigned URL: ${response.statusText}`);
+    }
+    const { url } = await response.json();
+    return url;
+  } catch (error) {
+    console.error('Error fetching presigned URL:', error);
     return null;
   }
-  const { url } = await response.json();
-  return url;
 }

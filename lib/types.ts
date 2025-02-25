@@ -19,3 +19,10 @@ export type Link = {
   is_active: boolean;
   token: string;
 };
+
+export interface GalleryImage {
+  id: number;
+  url: string | null;
+  key: string;
+  name: string;
+}
