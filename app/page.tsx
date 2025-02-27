@@ -48,7 +48,7 @@ export default function LandingPage() {
   return (
     <div className='min-h-screen flex flex-col'>
       <header className='fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm'>
-        <div className='container mx-auto flex h-16 items-center justify-between px-4'>
+        <div className='mx-auto flex h-16 items-center justify-between px-4'>
           <Link href='/' className='text-xl font-medium'>
             flock
           </Link>

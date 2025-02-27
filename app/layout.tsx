@@ -34,7 +34,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NuqsAdapter>
-            <main className='min-h-screen max-w-5xl mx-auto flex flex-col'>
+            <main className='min-h-screen max-w-6xl p-3 mx-auto flex flex-col'>
               <div className='flex-1 flex flex-col'>{children}</div>
             </main>
             <Toaster />

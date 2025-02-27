@@ -20,7 +20,7 @@ export default async function EventsPage() {
     .order('date', { ascending: true });
 
   return (
-    <div className='container flex-1 max-w-6xl py-6 h-full flex flex-col'>
+    <div className='flex-1 max-w-6xl py-6 h-full flex flex-col'>
       <header className='flex items-center justify-between mb-8'>
         <div>
           <h2 className='font-medium text-2xl'>Events</h2>
