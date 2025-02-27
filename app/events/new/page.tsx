@@ -1,18 +1,9 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calendar,
-  Check,
-  ImageIcon,
-  MapPin,
-  Upload,
-  X,
-} from 'lucide-react';
+import { Check, ImageIcon, X } from 'lucide-react';
 import { uploadFile } from '@/lib/api/actions';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -32,6 +23,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { createEvent, type EventFormData } from '@/lib/api/actions';
+import { useQueryState } from 'nuqs';
 
 export default function NewEventPage() {
   const supabase = createClient();
@@ -40,7 +32,11 @@ export default function NewEventPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useQueryState('step', {
+    defaultValue: '1',
+    parse: (value) => value,
+    serialize: (value) => value,
+  });
   const [eventId, setEventId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<EventFormData>({
@@ -53,6 +49,15 @@ export default function NewEventPage() {
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 1000;
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+  const currentStep = parseInt(step || '1');
+
+  useEffect(() => {
+    // If user navigates directly to a step but doesn't have an event ID for step 2+
+    if (currentStep >= 2 && !eventId) {
+      setStep('1');
+    }
+  }, [currentStep, eventId, setStep]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter((file) => {
@@ -144,7 +149,7 @@ export default function NewEventPage() {
 
       if (successCount === totalFiles) {
         toast.success('All files uploaded successfully!', { id: toastId });
-        setStep(3);
+        setStep('3');
       } else {
         toast.error(`Uploaded ${successCount} of ${totalFiles} files`, {
           id: toastId,
@@ -184,7 +189,7 @@ export default function NewEventPage() {
 
       toast.success('Event created successfully!');
       setEventId(result.data.id);
-      setStep(2);
+      setStep('2');
     } catch (error) {
       toast.error('Failed to create event. Try again later!');
     }
@@ -195,7 +200,7 @@ export default function NewEventPage() {
   };
 
   return (
-    <div className='container max-w-4xl mx-auto py-8 px-4'>
+    <div className='container max-w-4xl mx-auto py-8 px-4 min-h-[calc(100vh-200px)] flex flex-col'>
       <div className='mb-8'>
         <h1 className='text-xl text-center font-medium'>New Event</h1>
         <h2 className='text-muted-foreground text-sm text-center mt-1'>
@@ -204,46 +209,63 @@ export default function NewEventPage() {
         <div className='flex items-center justify-center mt-7'>
           <div className='flex items-center'>
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                currentStep >= 1
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted'
+              }`}
             >
-              {step > 1 ? <Check className='h-4 w-4' /> : 1}
+              {currentStep > 1 ? <Check className='h-4 w-4' /> : 1}
             </div>
             <span className='ml-2 font-medium'>Event Details</span>
           </div>
           <div className='w-16 h-0.5 mx-2 bg-muted'>
             <div
-              className={`h-full bg-primary ${step >= 2 ? 'w-full' : 'w-0'}`}
+              className={`h-full bg-primary ${
+                currentStep >= 2 ? 'w-full' : 'w-0'
+              }`}
             ></div>
           </div>
           <div className='flex items-center'>
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                currentStep >= 2
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted'
+              }`}
             >
-              {step > 2 ? <Check className='h-4 w-4' /> : 2}
+              {currentStep > 2 ? <Check className='h-4 w-4' /> : 2}
             </div>
             <span className='ml-2 font-medium'>Upload Media</span>
           </div>
           <div className='w-16 h-0.5 mx-2 bg-muted'>
             <div
-              className={`h-full bg-primary ${step >= 3 ? 'w-full' : 'w-0'}`}
+              className={`h-full bg-primary ${
+                currentStep >= 3 ? 'w-full' : 'w-0'
+              }`}
             ></div>
           </div>
           <div className='flex items-center'>
             <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                currentStep >= 3
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted'
+              }`}
             >
-              {step > 3 ? <Check className='h-4 w-4' /> : 3}
+              {currentStep > 3 ? <Check className='h-4 w-4' /> : 3}
             </div>
             <span className='ml-2 font-medium'>Complete</span>
           </div>
         </div>
       </div>
 
-      {step === 1 && (
-        <div className='space-y-4'>
-          <h2 className='text-muted-foreground'>
-            Let's start with some details about your event.
-          </h2>
+      {currentStep === 1 && (
+        <div className='space-y-4 flex-1'>
+          <p className='text-muted-foreground'>
+            Let's start with some details about your event. Don't worry, you can
+            always edit these later.
+          </p>
           <div className='space-y-2'>
             <Label htmlFor='name'>Event Name*</Label>
             <Input
@@ -323,18 +345,22 @@ export default function NewEventPage() {
         </div>
       )}
 
-      {step === 2 && (
-        <div className='space-y-6'>
+      {currentStep === 2 && (
+        <div className='space-y-6 flex-1 flex flex-col'>
+          <p className='text-muted-foreground'>
+            You can upload images for your event. This is optional, you can skip
+            this step if you want.
+          </p>
           <div
             {...getRootProps()}
-            className={`p-12 border-2 border-dashed rounded-md text-center cursor-pointer transition-colors ${
+            className={`p-12 flex-1 border-2 border-dashed rounded-md text-center cursor-pointer transition-colors flex flex-col justify-center items-center min-h-[300px] ${
               isDragActive
                 ? 'border-primary bg-primary/10'
                 : 'border-gray-300 hover:border-primary'
             }`}
           >
             <input {...getInputProps()} />
-            <ImageIcon className='h-10 w-10 mx-auto mb-4 text-muted-foreground' />
+            <ImageIcon className='h-8 w-8 mx-auto mb-4 text-muted-foreground' />
             {isDragActive ? (
               <p className='text-primary font-medium'>
                 Drop the images here ...
@@ -390,19 +416,18 @@ export default function NewEventPage() {
             </>
           )}
 
-          <div className='flex justify-between pt-6'>
-            <Button variant='outline' onClick={() => setStep(1)}>
-              <ArrowLeft className='mr-2 h-4 w-4' /> Back
+          <div className='flex justify-between pt-6 mt-auto'>
+            <Button variant='outline' onClick={() => setStep('3')}>
+              Skip
             </Button>
             <Button
               onClick={handleUploadFiles}
               disabled={isUploading || !files.length}
             >
               {isUploading ? (
-                <>Uploading</>
+                <>Uploading...</>
               ) : (
                 <>
-                  <Upload className='mr-2 h-4 w-4' />
                   Upload {files.length}{' '}
                   {files.length === 1 ? 'image' : 'images'}
                 </>
@@ -412,9 +437,9 @@ export default function NewEventPage() {
         </div>
       )}
 
-      {step === 3 && (
-        <div className='space-y-6 text-center'>
-          <div className='py-12'>
+      {currentStep === 3 && (
+        <div className='space-y-6 text-center flex-1 flex flex-col'>
+          <div className='py-12 flex-1 flex flex-col justify-center'>
             <div className='w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6'>
               <Check className='h-10 w-10 text-green-600' />
             </div>
@@ -424,28 +449,10 @@ export default function NewEventPage() {
             <p className='text-muted-foreground'>
               Your event has been created and your media has been uploaded.
             </p>
-
-            <div className='mt-8 space-y-4 max-w-md mx-auto text-left bg-muted/50 p-6 rounded-lg'>
-              <div className='flex items-start'>
-                <Calendar className='h-5 w-5 mr-3 text-muted-foreground' />
-                <div>
-                  <p className='font-medium'>{formData.name}</p>
-                  <p className='text-sm text-muted-foreground'>
-                    {format(formData.date, 'PPP')}
-                  </p>
-                </div>
-              </div>
-              <div className='flex items-start'>
-                <MapPin className='h-5 w-5 mr-3 text-muted-foreground' />
-                <p>{formData.location}</p>
-              </div>
-            </div>
           </div>
 
           <div className='flex justify-center pt-6'>
-            <Button onClick={handleFinish}>
-              View Event <ArrowRight className='ml-2 h-4 w-4' />
-            </Button>
+            <Button onClick={handleFinish}>View Event</Button>
           </div>
         </div>
       )}

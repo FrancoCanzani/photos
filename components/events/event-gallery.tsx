@@ -28,6 +28,8 @@ export default function EventGallery({
   const { ref, inView } = useInView();
   const supabase = createClient();
 
+  console.log(initialImages);
+
   const loadMoreImages = useCallback(async () => {
     if (loading || !hasMore) return;
 
@@ -97,6 +99,16 @@ export default function EventGallery({
     ? parseInt(selectedImageIndex, 10)
     : null;
 
+  if (initialImages.length === 0) {
+    return (
+      <div className='text-center text-sm flex items-center justify-center flex-1 h-full'>
+        <p className='text-muted-foreground text-balance'>
+          Nothing to show yet. Upload your first image to start sharing moments!
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <GalleryGrid
@@ -112,7 +124,8 @@ export default function EventGallery({
         </div>
       )}
 
-      <div ref={ref} className='h-10 mt-4' />
+      {initialImages.length === 0 ||
+        (hasMore && <div ref={ref} className='h-10 mt-4' />)}
 
       <EventGalleryDialog
         isOpen={currentImageIndex !== null}
