@@ -121,7 +121,7 @@ export async function createEvent(
         name: validatedData.name,
         date: validatedData.date.toISOString(),
         location: validatedData.location,
-        notes: validatedData.notes || '',
+        notes: validatedData.description || '',
       })
       .select()
       .single();
@@ -327,7 +327,7 @@ export async function updateEvent(
         name: validatedData.name,
         date: validatedData.date.toISOString(),
         location: validatedData.location,
-        notes: validatedData.notes || '',
+        notes: validatedData.description || '',
         updated_at: new Date().toISOString(),
       })
       .eq('id', eventId)

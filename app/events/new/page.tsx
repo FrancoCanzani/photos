@@ -24,6 +24,7 @@ import {
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { createEvent, type EventFormData } from '@/lib/api/actions';
 import { useQueryState } from 'nuqs';
+import { LocationInput } from '@/components/location-input';
 
 export default function NewEventPage() {
   const supabase = createClient();
@@ -43,7 +44,7 @@ export default function NewEventPage() {
     name: '',
     date: new Date(),
     location: '',
-    notes: '',
+    description: '',
   });
 
   const MAX_RETRIES = 3;
@@ -200,73 +201,17 @@ export default function NewEventPage() {
   };
 
   return (
-    <div className='container max-w-4xl mx-auto py-8 px-4 min-h-[calc(100vh-200px)] flex flex-col'>
+    <div className='mx-auto w-full py-8 min-h-[calc(100vh-200px)] flex flex-col'>
       <div className='mb-8'>
-        <h1 className='text-xl text-center font-medium'>New Event</h1>
-        <h2 className='text-muted-foreground text-sm text-center mt-1'>
+        <h1 className='text-xl font-medium'>New Event</h1>
+        <h2 className='text-muted-foreground text-sm mt-1'>
           Create a new event to store your moments
         </h2>
-        <div className='flex items-center justify-center mt-7'>
-          <div className='flex items-center'>
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                currentStep >= 1
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
-              }`}
-            >
-              {currentStep > 1 ? <Check className='h-4 w-4' /> : 1}
-            </div>
-            <span className='ml-2 font-medium'>Event Details</span>
-          </div>
-          <div className='w-16 h-0.5 mx-2 bg-muted'>
-            <div
-              className={`h-full bg-primary ${
-                currentStep >= 2 ? 'w-full' : 'w-0'
-              }`}
-            ></div>
-          </div>
-          <div className='flex items-center'>
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                currentStep >= 2
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
-              }`}
-            >
-              {currentStep > 2 ? <Check className='h-4 w-4' /> : 2}
-            </div>
-            <span className='ml-2 font-medium'>Upload Media</span>
-          </div>
-          <div className='w-16 h-0.5 mx-2 bg-muted'>
-            <div
-              className={`h-full bg-primary ${
-                currentStep >= 3 ? 'w-full' : 'w-0'
-              }`}
-            ></div>
-          </div>
-          <div className='flex items-center'>
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                currentStep >= 3
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
-              }`}
-            >
-              {currentStep > 3 ? <Check className='h-4 w-4' /> : 3}
-            </div>
-            <span className='ml-2 font-medium'>Complete</span>
-          </div>
-        </div>
       </div>
 
-      {currentStep === 1 && (
-        <div className='space-y-4 flex-1'>
-          <p className='text-muted-foreground'>
-            Let's start with some details about your event. Don't worry, you can
-            always edit these later.
-          </p>
-          <div className='space-y-2'>
+      <div className='space-y-4 flex-1 w-full'>
+        <div className='flex w-full items-center justify-evenly space-x-2'>
+          <div className='space-y-2 w-3/4'>
             <Label htmlFor='name'>Event Name*</Label>
             <Input
               id='name'
@@ -278,8 +223,7 @@ export default function NewEventPage() {
               required
             />
           </div>
-
-          <div className='space-y-2'>
+          <div className='space-y-2 w-1/4'>
             <Label htmlFor='date'>Event Date*</Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -287,7 +231,7 @@ export default function NewEventPage() {
                   id='date'
                   variant='outline'
                   className={cn(
-                    'col-span-3 justify-start text-left font-normal flex h-12 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
+                    'col-span-3 justify-start text-left font-normal flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
                     !formData.date && 'text-muted-foreground'
                   )}
                 >
@@ -308,154 +252,40 @@ export default function NewEventPage() {
               </PopoverContent>
             </Popover>
           </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='location'>Location*</Label>
-            <Input
-              id='location'
-              name='location'
-              value={formData.location}
-              onChange={handleInputChange}
-              placeholder='123 Main St, City'
-              className='h-12'
-              required
-            />
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='notes'>Notes</Label>
-            <Textarea
-              id='notes'
-              name='notes'
-              value={formData.notes}
-              onChange={handleInputChange}
-              placeholder='Additional details about the event...'
-              rows={6}
-            />
-          </div>
-
-          <div className='flex justify-end pt-4'>
-            <Button
-              onClick={handleCreateEvent}
-              disabled={!formData.name || !formData.location}
-            >
-              Continue
-            </Button>
-          </div>
         </div>
-      )}
 
-      {currentStep === 2 && (
-        <div className='space-y-6 flex-1 flex flex-col'>
-          <p className='text-muted-foreground'>
-            You can upload images for your event. This is optional, you can skip
-            this step if you want.
-          </p>
-          <div
-            {...getRootProps()}
-            className={`p-12 flex-1 border-2 border-dashed rounded-md text-center cursor-pointer transition-colors flex flex-col justify-center items-center min-h-[300px] ${
-              isDragActive
-                ? 'border-primary bg-primary/10'
-                : 'border-gray-300 hover:border-primary'
-            }`}
+        <div className='space-y-2'>
+          <Label htmlFor='description'>Description</Label>
+          <Textarea
+            id='description'
+            name='description'
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder='Additional details about the event...'
+            rows={6}
+          />
+        </div>
+
+        <div className='space-y-2'>
+          <LocationInput
+            value={formData.location}
+            onChange={(value) =>
+              setFormData((prev) => ({ ...prev, location: value }))
+            }
+            required
+            placeholder='123 Main St, City'
+          />
+        </div>
+
+        <div className='flex justify-end pt-4'>
+          <Button
+            onClick={handleCreateEvent}
+            disabled={!formData.name || !formData.location}
           >
-            <input {...getInputProps()} />
-            <ImageIcon className='h-8 w-8 mx-auto mb-4 text-muted-foreground' />
-            {isDragActive ? (
-              <p className='text-primary font-medium'>
-                Drop the images here ...
-              </p>
-            ) : (
-              <>
-                <p className='font-medium'>
-                  Drag & drop images here, or click to select
-                </p>
-                <p className='text-sm text-muted-foreground mt-1'>
-                  (10MB max per file)
-                </p>
-              </>
-            )}
-          </div>
-
-          {files.length > 0 && (
-            <>
-              <div className='mt-6'>
-                <h3 className='text-lg font-medium mb-3'>
-                  Selected Images ({files.length})
-                </h3>
-                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4'>
-                  {files.map((file, index) => (
-                    <div key={index} className='relative group aspect-square'>
-                      <Image
-                        src={URL.createObjectURL(file)}
-                        alt={`Preview ${index + 1}`}
-                        fill
-                        className='rounded-md object-cover'
-                      />
-                      <Button
-                        variant='outline'
-                        size='icon'
-                        onClick={() => removeImage(index)}
-                        className='absolute top-2 right-2 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity'
-                      >
-                        <X className='h-4 w-4' />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {isUploading && (
-                <div className='mt-6'>
-                  <Progress value={progress} className='w-full h-2' />
-                  <p className='text-sm text-center mt-2'>
-                    Uploading... {Math.round(progress)}%
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-
-          <div className='flex justify-between pt-6 mt-auto'>
-            <Button variant='outline' onClick={() => setStep('3')}>
-              Skip
-            </Button>
-            <Button
-              onClick={handleUploadFiles}
-              disabled={isUploading || !files.length}
-            >
-              {isUploading ? (
-                <>Uploading...</>
-              ) : (
-                <>
-                  Upload {files.length}{' '}
-                  {files.length === 1 ? 'image' : 'images'}
-                </>
-              )}
-            </Button>
-          </div>
+            Save
+          </Button>
         </div>
-      )}
-
-      {currentStep === 3 && (
-        <div className='space-y-6 text-center flex-1 flex flex-col'>
-          <div className='py-12 flex-1 flex flex-col justify-center'>
-            <div className='w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6'>
-              <Check className='h-10 w-10 text-green-600' />
-            </div>
-            <h2 className='text-2xl font-bold mb-2'>
-              Event Created Successfully!
-            </h2>
-            <p className='text-muted-foreground'>
-              Your event has been created and your media has been uploaded.
-            </p>
-          </div>
-
-          <div className='flex justify-center pt-6'>
-            <Button onClick={handleFinish}>View Event</Button>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

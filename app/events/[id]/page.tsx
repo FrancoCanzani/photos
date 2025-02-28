@@ -3,14 +3,11 @@ import { redirect } from 'next/navigation';
 import { s3Client } from '@/lib/s3';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import dynamic from 'next/dynamic';
 import ShareEvent from '@/components/events/share-event';
 import MultiMediaUploadDialog from '@/components/multi-media-uploader';
 import { EventEditorDialog } from '@/components/events/event-editor-dialog';
-
-const Gallery = dynamic(
-  () => import('../../../components/events/event-gallery')
-);
+import EventGallery from '@/components/events/event-gallery';
+import Link from 'next/link';
 
 async function getPresignedUrl(key: string) {
   try {
@@ -76,8 +73,8 @@ export default async function EventGalleryPage({
   );
 
   return (
-    <div className='max-w-6xl py-6'>
-      <header className='flex items-center justify-between mb-8'>
+    <div className='max-w-6xl h-full flex-1 py-6'>
+      <div className='flex items-center justify-between mb-8'>
         <div>
           <h2 className='font-medium text-xl'>{event.name}</h2>
           <p className='text-muted-foreground hidden sm:block text-sm mt-1'>
@@ -86,12 +83,13 @@ export default async function EventGalleryPage({
         </div>
         <div className='flex items-center font-medium text-sm justify-center space-x-4'>
           <EventEditorDialog event={event} />
+          <Link href={`/events/${eventId}/share`}>Share</Link>
           <ShareEvent eventId={eventId} links={links} />
           <MultiMediaUploadDialog eventId={eventId} />
         </div>
-      </header>
+      </div>
 
-      <Gallery
+      <EventGallery
         initialImages={initialImages}
         eventId={event.id}
         userId={user.id}

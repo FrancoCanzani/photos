@@ -7,7 +7,7 @@ const eventSchema = z.object({
     invalid_type_error: 'Invalid date format',
   }),
   location: z.string().min(1, 'Location is required'),
-  notes: z.string().optional(),
+  description: z.string().optional(),
 });
 
 export { eventSchema };
