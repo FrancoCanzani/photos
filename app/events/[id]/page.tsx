@@ -79,7 +79,7 @@ export default async function EventGalleryPage({
     <div className='max-w-6xl py-6'>
       <header className='flex items-center justify-between mb-8'>
         <div>
-          <h2 className='font-medium text-2xl'>{event.name}</h2>
+          <h2 className='font-medium text-xl'>{event.name}</h2>
           <p className='text-muted-foreground hidden sm:block text-sm mt-1'>
             Manage the event moments
           </p>

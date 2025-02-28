@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
-import { X } from 'lucide-react';
+import { ImageUp, X } from 'lucide-react';
 import { uploadFile } from '@/lib/api/actions';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -147,7 +147,14 @@ export default function MultiMediaUploadDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button className='hover:underline'>Upload Media</button>
+        <Button
+          title='Upload media'
+          variant={'default'}
+          size={'icon'}
+          className='rounded-full'
+        >
+          <ImageUp className='w-4 h-4' />
+        </Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-xl'>
         <DialogHeader>

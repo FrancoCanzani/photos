@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { Link } from '@/lib/types';
+import { Share2 } from 'lucide-react';
 
 interface ShareEventProps {
   eventId: string;
@@ -134,7 +135,14 @@ export default function ShareEvent({ eventId, links }: ShareEventProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className='hover:underline'>Share</button>
+        <Button
+          title='Share event'
+          variant={'default'}
+          size={'icon'}
+          className='rounded-full'
+        >
+          <Share2 className='w-4 h-4' />
+        </Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>

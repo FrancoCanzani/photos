@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { updateEvent, type EventFormData } from '@/lib/api/actions';
+import { Pencil } from 'lucide-react';
 
 interface EventEditorModalProps {
   event: EventFormData & { id: number };
@@ -106,7 +107,14 @@ export function EventEditorDialog({ event }: EventEditorModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button className='hover:underline'>Edit</button>
+        <Button
+          title='Edit event'
+          variant={'default'}
+          size={'icon'}
+          className='rounded-full'
+        >
+          <Pencil className='w-4 h-4' />
+        </Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
