@@ -36,6 +36,7 @@ export function LocationInput({
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const autocompleteService =
     useRef<google.maps.places.AutocompleteService | null>(null);
   const geocoderService = useRef<google.maps.Geocoder | null>(null);
@@ -88,10 +89,12 @@ export function LocationInput({
     }
 
     const fetchSuggestions = async () => {
+      setIsLoadingSuggestions(true);
       try {
         autocompleteService.current?.getPlacePredictions(
           { input: query },
           (predictions, status) => {
+            setIsLoadingSuggestions(false);
             if (
               status === google.maps.places.PlacesServiceStatus.OK &&
               predictions
@@ -109,6 +112,7 @@ export function LocationInput({
           }
         );
       } catch (error) {
+        setIsLoadingSuggestions(false);
         console.error('Error fetching location suggestions:', error);
         setSuggestions([]);
       }
@@ -137,34 +141,55 @@ export function LocationInput({
 
     setIsLoadingLocation(true);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
+    const handleSuccess = (position: GeolocationPosition) => {
+      const { latitude, longitude } = position.coords;
 
-        geocoderService.current?.geocode(
-          {
-            location: { lat: latitude, lng: longitude },
-          },
-          (results, status) => {
-            setIsLoadingLocation(false);
+      geocoderService.current?.geocode(
+        {
+          location: { lat: latitude, lng: longitude },
+        },
+        (results, status) => {
+          setIsLoadingLocation(false);
 
-            if (status === 'OK' && results && results[0]) {
-              const address = results[0].formatted_address;
-              setQuery(address);
-              onChange(address);
-            } else {
-              toast.error('Could not find your location');
-            }
+          if (status === 'OK' && results && results[0]) {
+            const address = results[0].formatted_address;
+            setQuery(address);
+            onChange(address);
+            toast.success('Location updated successfully');
+          } else {
+            toast.error('Could not find your location');
           }
-        );
-      },
-      (error) => {
-        setIsLoadingLocation(false);
-        toast.error(`Error getting your location: ${error.message}`);
-      },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-    );
+        }
+      );
+    };
+
+    const handleError = (error: GeolocationPositionError) => {
+      setIsLoadingLocation(false);
+
+      const errorMessages = {
+        1: 'Permission denied. Please allow location access.',
+        2: 'Location unavailable. Try again later.',
+        3: 'Location request timed out. Try again.',
+      };
+
+      const message =
+        errorMessages[error.code as 1 | 2 | 3] || `Error: ${error.message}`;
+      toast.error(message);
+    };
+
+    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+      enableHighAccuracy: true,
+      timeout: 8000,
+      maximumAge: 0,
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      autocompleteService.current = null;
+      geocoderService.current = null;
+    };
+  }, []);
 
   if (loadError) {
     return (
@@ -209,9 +234,14 @@ export function LocationInput({
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder={placeholder}
-              className={cn('h-12', className)}
+              className={cn('h-12 pr-10', className)}
               required={required}
             />
+            {isLoadingSuggestions && (
+              <div className='absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none'>
+                <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
+              </div>
+            )}
           </div>
           <Button
             type='button'
@@ -220,6 +250,8 @@ export function LocationInput({
             className='h-12 w-12'
             onClick={getUserLocation}
             disabled={isLoadingLocation || !isLoaded}
+            title='Use your current location'
+            aria-label='Use your current location'
           >
             {isLoadingLocation ? (
               <Loader2 className='h-5 w-5 animate-spin' />
@@ -229,20 +261,34 @@ export function LocationInput({
           </Button>
         </div>
 
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && (
           <div
             ref={suggestionsRef}
             className='absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto'
           >
-            {suggestions.map((suggestion) => (
-              <div
-                key={suggestion.id}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className='p-3 hover:bg-muted cursor-pointer flex items-center gap-2'
-              >
-                <span className='text-sm'>{suggestion.description}</span>
+            {isLoadingSuggestions ? (
+              <div className='p-3 flex items-center justify-center'>
+                <Loader2 className='h-5 w-5 animate-spin text-muted-foreground mr-2' />
+                <span className='text-sm text-muted-foreground'>
+                  Loading suggestions...
+                </span>
               </div>
-            ))}
+            ) : suggestions.length > 0 ? (
+              suggestions.map((suggestion) => (
+                <div
+                  key={suggestion.id}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className='p-3 hover:bg-muted cursor-pointer flex items-center gap-2'
+                >
+                  <MapPin className='h-4 w-4 text-muted-foreground flex-shrink-0' />
+                  <span className='text-sm'>{suggestion.description}</span>
+                </div>
+              ))
+            ) : query.length >= 3 ? (
+              <div className='p-3 text-sm text-muted-foreground text-center'>
+                No locations found
+              </div>
+            ) : null}
           </div>
         )}
       </div>

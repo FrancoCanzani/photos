@@ -1,16 +1,9 @@
 'use client';
 
-import { useCallback, useState, useEffect } from 'react';
-import Image from 'next/image';
-import { useDropzone } from 'react-dropzone';
-import { Check, ImageIcon, X } from 'lucide-react';
-import { uploadFile } from '@/lib/api/actions';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,22 +16,10 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { createEvent, type EventFormData } from '@/lib/api/actions';
-import { useQueryState } from 'nuqs';
 import { LocationInput } from '@/components/location-input';
 
 export default function NewEventPage() {
-  const supabase = createClient();
-  const { userId } = useAuth();
-  const [files, setFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const router = useRouter();
-  const [step, setStep] = useQueryState('step', {
-    defaultValue: '1',
-    parse: (value) => value,
-    serialize: (value) => value,
-  });
-  const [eventId, setEventId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
@@ -46,125 +27,6 @@ export default function NewEventPage() {
     location: '',
     description: '',
   });
-
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY = 1000;
-  const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-  const currentStep = parseInt(step || '1');
-
-  useEffect(() => {
-    // If user navigates directly to a step but doesn't have an event ID for step 2+
-    if (currentStep >= 2 && !eventId) {
-      setStep('1');
-    }
-  }, [currentStep, eventId, setStep]);
-
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const validFiles = acceptedFiles.filter((file) => {
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} is too large. Maximum size is 10MB`);
-        return false;
-      }
-      return true;
-    });
-
-    setFiles((prev) => [...prev, ...validFiles]);
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': [],
-    },
-    multiple: true,
-    maxSize: MAX_FILE_SIZE,
-  });
-
-  const removeImage = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadWithRetry = async (
-    file: File,
-    retryCount = 0
-  ): Promise<boolean> => {
-    try {
-      const fileKey = `${file.name}-${self.crypto.randomUUID()}`;
-      const filePath = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/tests/${fileKey}`;
-
-      const response = await uploadFile(file, fileKey);
-
-      if (response?.data?.$metadata.httpStatusCode === 200) {
-        const { error } = await supabase.from('moments').insert({
-          key: fileKey,
-          name: file.name,
-          user_id: userId,
-          bucket: 'tests',
-          event_id: eventId,
-          size: file.size,
-          type: file.type,
-          updated_at: new Date(),
-          file_path: filePath,
-        });
-
-        if (error) {
-          throw error;
-        }
-        return true;
-      }
-      throw new Error('Upload failed');
-    } catch (error) {
-      if (retryCount < MAX_RETRIES) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, RETRY_DELAY * (retryCount + 1))
-        );
-        return uploadWithRetry(file, retryCount + 1);
-      }
-      return false;
-    }
-  };
-
-  const handleUploadFiles = async () => {
-    if (!files.length || !eventId) return;
-
-    setIsUploading(true);
-    const toastId = toast.loading('Starting upload...');
-
-    try {
-      let successCount = 0;
-      const totalFiles = files.length;
-      const results: boolean[] = [];
-
-      for (const file of files) {
-        const success = await uploadWithRetry(file);
-        results.push(success);
-
-        if (success) {
-          successCount++;
-          setProgress((successCount / totalFiles) * 100);
-        } else {
-          toast.error(`Failed to upload ${file.name}`);
-        }
-      }
-
-      if (successCount === totalFiles) {
-        toast.success('All files uploaded successfully!', { id: toastId });
-        setStep('3');
-      } else {
-        toast.error(`Uploaded ${successCount} of ${totalFiles} files`, {
-          id: toastId,
-        });
-      }
-
-      setFiles((prev) => prev.filter((_, index) => !results[index]));
-    } catch (error) {
-      toast.error('Upload failed', { id: toastId });
-    } finally {
-      setIsUploading(false);
-      setProgress(0);
-    }
-  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -189,15 +51,10 @@ export default function NewEventPage() {
       }
 
       toast.success('Event created successfully!');
-      setEventId(result.data.id);
-      setStep('2');
+      router.push(`/events/${result.data.id}`);
     } catch (error) {
       toast.error('Failed to create event. Try again later!');
     }
-  };
-
-  const handleFinish = () => {
-    router.push(`/events/${eventId}`);
   };
 
   return (
