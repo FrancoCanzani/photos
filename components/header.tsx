@@ -12,6 +12,9 @@ export default function Header() {
         <Link href={'/events/new'} className='hover:underline'>
           New Event
         </Link>
+        <Link href={'/events/new'} className='hover:underline'>
+          Settings
+        </Link>
       </div>
     </header>
   );
