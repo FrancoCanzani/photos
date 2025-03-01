@@ -1,26 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { s3Client } from '@/lib/s3';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import ShareEvent from '@/components/events/share-event';
 import MultiMediaUploadDialog from '@/components/multi-media-uploader';
 import { EventEditorDialog } from '@/components/events/event-editor-dialog';
 import EventGallery from '@/components/events/event-gallery';
 import Link from 'next/link';
-
-async function getPresignedUrl(key: string) {
-  try {
-    const command = new GetObjectCommand({
-      Bucket: 'tests',
-      Key: key,
-    });
-    return await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1-hour expiry
-  } catch (error) {
-    console.error('Error generating presigned URL:', error);
-    return null;
-  }
-}
+import { getPresignedUrl } from '@/lib/helpers';
+import Image from 'next/image';
 
 export default async function EventGalleryPage({
   params,
@@ -43,12 +29,12 @@ export default async function EventGalleryPage({
     .eq('user_id', user.id)
     .single();
 
+  if (!event) return <div className='text-gray-500'>Event not found.</div>;
+
   const { data: links } = await supabase
     .from('links')
     .select()
     .eq('event_id', eventId);
-
-  if (!event) return <div className='text-gray-500'>Event not found.</div>;
 
   const { data: moments, error } = await supabase
     .from('moments')
@@ -67,16 +53,47 @@ export default async function EventGalleryPage({
     (moments || []).map(async (moment) => ({
       id: moment.id,
       key: moment.key,
-      url: await getPresignedUrl(moment.key),
+      url: await getPresignedUrl(moment.key, 'tests'),
       name: moment.name,
     }))
   );
 
+  let coverImageUrl = null;
+  if (event.cover_image_key) {
+    try {
+      coverImageUrl = await getPresignedUrl(
+        event.cover_image_key,
+        'cover-images'
+      );
+    } catch (error) {
+      console.error('Error getting cover image URL:', error);
+    }
+  }
+
   return (
     <div className='max-w-6xl h-full flex-1 py-6'>
+      {coverImageUrl && (
+        <div className='mb-8 w-full h-64 relative rounded-lg overflow-hidden'>
+          <Image
+            src={coverImageUrl}
+            alt={`Cover image for ${event.name}`}
+            fill
+            className='object-cover'
+            priority
+          />
+          <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent'></div>
+          <div className='absolute bottom-0 left-0 p-6 text-white'>
+            <h1 className='text-3xl font-bold'>{event.name}</h1>
+            <p className='text-sm opacity-90 mt-1'>{event.location}</p>
+          </div>
+        </div>
+      )}
+
       <div className='flex items-center justify-between mb-8'>
         <div>
-          <h2 className='font-medium text-xl'>{event.name}</h2>
+          {!coverImageUrl && (
+            <h2 className='font-medium text-xl'>{event.name}</h2>
+          )}
           <p className='text-muted-foreground hidden sm:block text-sm mt-1'>
             Manage the event moments
           </p>

@@ -155,7 +155,6 @@ export function LocationInput({
             const address = results[0].formatted_address;
             setQuery(address);
             onChange(address);
-            toast.success('Location updated successfully');
           } else {
             toast.error('Could not find your location');
           }
@@ -217,7 +216,7 @@ export function LocationInput({
   }
 
   return (
-    <div className='space-y-2'>
+    <>
       {label && (
         <Label htmlFor='location'>
           {label}
@@ -292,6 +291,6 @@ export function LocationInput({
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

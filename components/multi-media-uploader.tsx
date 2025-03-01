@@ -67,9 +67,9 @@ export default function MultiMediaUploadDialog({
   ): Promise<boolean> => {
     try {
       const fileKey = `${file.name}-${self.crypto.randomUUID()}`;
-      const filePath = `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/tests/${fileKey}`;
+      const filePath = `https://${process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/tests/${fileKey}`;
 
-      const response = await uploadFile(file, fileKey);
+      const response = await uploadFile(file, fileKey, 'tests');
 
       if (response?.data?.$metadata.httpStatusCode === 200) {
         const { error } = await supabase.from('moments').insert({

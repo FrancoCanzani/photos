@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { deleteMoment } from '@/lib/api/actions';
+import { deleteFile } from '@/lib/api/actions';
 import { GalleryImage } from '@/lib/types';
 
 interface EventGalleryDialogProps {
@@ -158,7 +158,7 @@ export default function EventGalleryDialog({
                 onClick={(e) => {
                   e.stopPropagation();
                   if (currentImage.url) {
-                    deleteMoment(currentImage.url, currentImage.id);
+                    deleteFile(currentImage.url, currentImage.id, 'tests');
                     onClose();
                   }
                 }}

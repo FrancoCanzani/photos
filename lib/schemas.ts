@@ -8,6 +8,7 @@ const eventSchema = z.object({
   }),
   location: z.string().min(1, 'Location is required'),
   description: z.string().optional(),
+  cover: z.string().optional(),
 });
 
 export { eventSchema };

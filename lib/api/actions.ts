@@ -44,7 +44,8 @@ export async function listBuckets(): Promise<ServiceResponse<string[]>> {
 
 export async function uploadFile(
   file: File,
-  key: string
+  key: string,
+  bucket: string
 ): Promise<ServiceResponse<PutObjectCommandOutput>> {
   if (!file || !key) {
     return {
@@ -61,12 +62,14 @@ export async function uploadFile(
 
     const response = await s3Client.send(
       new PutObjectCommand({
-        Bucket: 'tests',
+        Bucket: bucket,
         Key: key,
         Body: uint8Array,
         ContentType: file.type,
       })
     );
+
+    console.log(response);
 
     revalidatePath('/events/[id]', 'page');
     return { data: response };
@@ -122,6 +125,7 @@ export async function createEvent(
         date: validatedData.date.toISOString(),
         location: validatedData.location,
         description: validatedData.description || '',
+        cover_image_key: validatedData.cover || '',
       })
       .select()
       .single();
@@ -200,7 +204,7 @@ export async function deleteEvent(
     }
 
     for (const moment of moments ?? []) {
-      await deleteMoment(moment.key, moment.id);
+      await deleteFile(moment.key, moment.id, 'tests');
     }
 
     const { error: eventError } = await supabase
@@ -229,9 +233,10 @@ export async function deleteEvent(
   }
 }
 
-export async function deleteMoment(
+export async function deleteFile(
   key: string,
-  momentId: number
+  momentId: number,
+  bucket: string
 ): Promise<ServiceResponse<{ s3Response: any; deletedMoment: any }>> {
   if (!key || !momentId) {
     return {
@@ -244,7 +249,7 @@ export async function deleteMoment(
 
   try {
     const command = new DeleteObjectCommand({
-      Bucket: 'tests',
+      Bucket: bucket,
       Key: key,
     });
 
