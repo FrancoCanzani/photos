@@ -1,243 +1,326 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import QRCode from 'react-qr-code';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
-import { Link as LinkType } from '@/lib/types';
-import { Copy, Download, XCircle, ArrowLeft } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import Link from 'next/link';
-
-interface ShareEventClientProps {
-  eventId: string;
-  links: LinkType[];
-  eventName: string;
-}
+import { useState } from 'react';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Calendar } from '../ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { CalendarIcon, Copy, Download } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import QRCodeSVG from 'react-qr-code';
 
 export default function ShareEvent({
   eventId,
   links,
   eventName,
-}: ShareEventClientProps) {
-  const [loading, setLoading] = useState(false);
-  const [shareLink, setShareLink] = useState('');
-  const [expiresIn, setExpiresIn] = useState('');
-  const [existingLink, setExistingLink] = useState<LinkType | null>(null);
-  const supabase = createClient();
+}: {
+  eventId: string;
+  links: any[];
+  eventName: string;
+}) {
+  const [hasPublicLink, setHasPublicLink] = useState(false);
+  const [hasEditorLink, setHasEditorLink] = useState(false);
+  const [publicPinCode, setPublicPinCode] = useState('');
+  const [editorPinCode, setEditorPinCode] = useState('');
+  const [publicExpiryDate, setPublicExpiryDate] = useState<Date | undefined>(
+    undefined
+  );
+  const [editorExpiryDate, setEditorExpiryDate] = useState<Date | undefined>(
+    undefined
+  );
 
-  useEffect(() => {
-    if (links && Array.isArray(links)) {
-      const activeLink = links.find(
-        (link) =>
-          link.is_active &&
-          (!link.expires_at || new Date(link.expires_at) > new Date())
-      );
+  const publicUrl = `https://${process.env.VERCEL_URL ?? 'http://localhost:3000'}/events/gallery/${window.crypto.randomUUID()}`;
+  const editorUrl = `https://${process.env.VERCEL_URL ?? 'http://localhost:3000'}/events/${eventId}`;
 
-      if (activeLink) {
-        setExistingLink(activeLink);
-        setShareLink(`${window.location.origin}/shared/${activeLink.token}`);
-      }
-    }
-  }, [links]);
+  const downloadQRCode = (type: 'public' | 'editor') => {
+    const svg = document.getElementById(`${type}-qr-code`);
+    if (svg) {
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
 
-  const handleCreateLink = async () => {
-    setLoading(true);
+      // Create an image from the SVG
+      const img = new Image();
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], {
+        type: 'image/svg+xml;charset=utf-8',
+      });
+      const url = URL.createObjectURL(svgBlob);
 
-    try {
-      const expiresAt = expiresIn
-        ? new Date(
-            Date.now() +
-              Number(expiresIn) * 60 * 60 * 1000 -
-              new Date().getTimezoneOffset() * 60000
-          ).toISOString()
-        : null;
+      img.onload = () => {
+        // Set canvas dimensions
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-      const { data, error } = await supabase
-        .from('links')
-        .insert({
-          event_id: eventId,
-          token: crypto.randomUUID(),
-          expires_at: expiresAt,
-          is_active: true,
-        })
-        .select()
-        .single();
+        // Draw white background
+        if (ctx) {
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      if (error) throw error;
+          // Draw the image
+          ctx.drawImage(img, 0, 0);
 
-      const link = `${window.location.origin}/shared/${data.token}`;
-      setShareLink(link);
-      setExistingLink(data);
-      toast.success('Share link created');
-    } catch (error) {
-      toast.error('Failed to create share link');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+          // Convert to PNG and download
+          const pngUrl = canvas.toDataURL('image/png');
+          const downloadLink = document.createElement('a');
+          downloadLink.href = pngUrl;
+          downloadLink.download = `${eventName}-${type}-qr-code.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          URL.revokeObjectURL(url);
+        }
+      };
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareLink);
-      toast.success('Link copied to clipboard');
-    } catch {
-      toast.error('Failed to copy link');
-    }
-  };
-
-  const downloadQR = () => {
-    const svg = document.querySelector('#share-qr-code svg');
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx?.drawImage(img, 0, 0);
-
-      const pngFile = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.download = `${eventName.replace(/\s+/g, '-')}-qr-code.png`;
-      downloadLink.href = pngFile;
-      downloadLink.click();
-    };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
-  };
-
-  const disableLink = async () => {
-    if (!existingLink) return;
-
-    try {
-      const { error } = await supabase
-        .from('links')
-        .update({ is_active: false })
-        .eq('id', existingLink.id);
-
-      if (error) throw error;
-
-      toast.success('Link disabled');
-      setExistingLink(null);
-      setShareLink('');
-    } catch (error) {
-      toast.error('Failed to disable link');
-      console.error(error);
+      img.src = url;
     }
   };
 
   return (
-    <div className='space-y-6'>
-      <Link
-        href={`/events/${eventId}`}
-        className='flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors'
-      >
-        <ArrowLeft className='w-4 h-4 mr-1' /> Back to event
-      </Link>
+    <div className='w-full'>
+      <form className='space-y-6'>
+        <div className='space-y-4'>
+          <h3 className='text-lg text-muted-foreground'>Sharing options</h3>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Share "{eventName}"</CardTitle>
-          <CardDescription>
-            Create a public link to share this event with anyone
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!shareLink ? (
-            <div className='space-y-4'>
-              <div className='space-y-2'>
-                <div className='flex items-center justify-start space-x-2'>
-                  <Label htmlFor='expiresIn'>
-                    Expires in (hours) (Optional)
-                  </Label>
-                  {expiresIn && (
-                    <span className='text-xs text-muted-foreground'>{`Expires: ${new Date(
-                      Date.now() +
-                        Number(expiresIn) * 60 * 60 * 1000 -
-                        new Date().getTimezoneOffset() * 60000
-                    ).toLocaleString()}`}</span>
-                  )}
-                </div>
-                <Input
-                  id='expiresIn'
-                  type='number'
-                  value={expiresIn}
-                  onChange={(e) => setExpiresIn(e.target.value)}
-                  min='1'
-                  placeholder='Leave empty for no expiration'
-                />
-              </div>
-              <Button
-                className='w-full'
-                onClick={handleCreateLink}
-                disabled={loading || !!existingLink}
-              >
-                {existingLink ? 'Use Existing Link' : 'Generate Share Link'}
-              </Button>
+          <div className='flex flex-row items-center justify-between rounded-md border p-3'>
+            <div className='space-y-0.5'>
+              <Label>Public link</Label>
+              <p className='text-sm text-muted-foreground'>
+                Anyone with this link can view your event moments
+              </p>
             </div>
-          ) : (
-            <>
-              <div className='space-y-4'>
-                <div className='space-y-2'>
-                  <p className='text-muted-foreground'>
-                    Anyone with this link will be able to see and download event
-                    moments.
-                  </p>
-                  {existingLink?.expires_at && (
-                    <p className='text-sm text-muted-foreground'>
-                      Expires at:{' '}
-                      {new Date(existingLink.expires_at).toLocaleString()}
-                    </p>
-                  )}
+            <Switch
+              checked={hasPublicLink}
+              onCheckedChange={setHasPublicLink}
+            />
+          </div>
+
+          {hasPublicLink && (
+            <div className='space-y-4'>
+              <div className='flex items-center space-x-2'>
+                <Input value={publicUrl} readOnly className='flex-1' />
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => navigator.clipboard.writeText(publicUrl)}
+                >
+                  <Copy className='h-4 w-4' />
+                </Button>
+              </div>
+
+              <div className='flex items-center justify-start space-x-4'>
+                <div className='space-y-1.5'>
+                  <Label>PIN protection</Label>
+                  <Input
+                    type='text'
+                    placeholder='Set a 4-digit PIN'
+                    value={publicPinCode}
+                    onChange={(e) =>
+                      setPublicPinCode(
+                        e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
+                      )
+                    }
+                    maxLength={4}
+                    className='w-36'
+                  />
                 </div>
 
-                <div className='flex flex-col items-center space-y-6 py-4'>
-                  <div id='share-qr-code' className='bg-white p-4 rounded-lg'>
-                    <QRCode value={shareLink} size={200} />
-                  </div>
-
-                  <div className='w-full'>
-                    <div className='flex items-center space-x-2 mb-4'>
-                      <Input value={shareLink} readOnly />
+                <div className='space-y-1.5 flex flex-col'>
+                  <Label>Link expiration</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <Button
                         variant='outline'
-                        size='icon'
-                        onClick={copyLink}
-                        title='Copy link'
+                        className={cn(
+                          'w-[240px] justify-start text-left font-normal',
+                          !publicExpiryDate && 'text-muted-foreground'
+                        )}
                       >
-                        <Copy className='w-4 h-4' />
+                        {publicExpiryDate
+                          ? format(publicExpiryDate, 'PPP')
+                          : 'Set expiry date'}
                       </Button>
-                    </div>
+                    </PopoverTrigger>
+                    <PopoverContent className='w-auto p-0' align='start'>
+                      <Calendar
+                        mode='single'
+                        selected={publicExpiryDate}
+                        onSelect={setPublicExpiryDate}
+                        initialFocus
+                        disabled={(date) => date < new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
 
-                    <div className='flex items-center justify-center space-x-3'>
-                      <Button variant='outline' onClick={downloadQR}>
-                        <Download className='w-4 h-4 mr-2' /> Download QR Code
-                      </Button>
-                      <Button variant='destructive' onClick={disableLink}>
-                        <XCircle className='w-4 h-4 mr-2' /> Disable Link
-                      </Button>
-                    </div>
+              <div className='flex flex-col space-y-4'>
+                <div className='space-y-2'>
+                  <Label>Shareable link</Label>
+                  <p className='text-sm text-muted-foreground'>
+                    Share this link with your guests to give them access to your
+                    event
+                  </p>
+                </div>
+
+                <div className='flex justify-start bg-emerald-50 items-center w-full gap-4'>
+                  <QRCodeSVG
+                    id='public-qr-code'
+                    value={
+                      publicUrl + (publicPinCode ? `?pin=${publicPinCode}` : '')
+                    }
+                    size={200}
+                    level='H'
+                    style={{
+                      width: '100%',
+                      maxWidth: '250px',
+                      height: 'auto',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <div className='rounded-md bg-accent p-2 h-full'>
+                    <ul>
+                      <li className='text-sm list-disc text-muted-foreground text-center'>
+                        Print and place this QR code at your venue for easy
+                        access
+                      </li>
+                    </ul>
+                    <Button
+                      variant='outline'
+                      onClick={() => downloadQRCode('public')}
+                    >
+                      Download QR Code
+                    </Button>
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
-        </CardContent>
-      </Card>
+
+          <div className='flex flex-row items-center justify-between rounded-md border p-3'>
+            <div className='space-y-0.5'>
+              <Label>Editor link</Label>
+              <p className='text-sm text-muted-foreground'>
+                Anyone with this link will have editor rights on your event
+              </p>
+            </div>
+            <Switch
+              checked={hasEditorLink}
+              onCheckedChange={setHasEditorLink}
+            />
+          </div>
+
+          {hasEditorLink && (
+            <div className='space-y-4'>
+              <div className='flex items-center space-x-2'>
+                <Input value={editorUrl} readOnly className='flex-1' />
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => navigator.clipboard.writeText(editorUrl)}
+                >
+                  <Copy className='h-4 w-4' />
+                </Button>
+              </div>
+
+              <div className='space-y-2'>
+                <Label>PIN protection</Label>
+                <div className='flex items-center space-x-2'>
+                  <Input
+                    type='text'
+                    placeholder='Set a 4-digit PIN'
+                    value={editorPinCode}
+                    onChange={(e) =>
+                      setEditorPinCode(
+                        e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
+                      )
+                    }
+                    maxLength={4}
+                    className='w-32'
+                  />
+                  <span className='text-sm text-muted-foreground'>
+                    Required for editor access
+                  </span>
+                </div>
+              </div>
+
+              <div className='space-y-2'>
+                <Label>Link expiration</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant='outline'
+                      className={cn(
+                        'w-[240px] justify-start text-left font-normal',
+                        !editorExpiryDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className='mr-2 h-4 w-4' />
+                      {editorExpiryDate
+                        ? format(editorExpiryDate, 'PPP')
+                        : 'Set expiry date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-auto p-0' align='start'>
+                    <Calendar
+                      mode='single'
+                      selected={editorExpiryDate}
+                      onSelect={setEditorExpiryDate}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div className='space-y-2'>
+                  <Label>Shareable link</Label>
+                  <p className='text-sm text-muted-foreground'>
+                    Share this link with collaborators to give them editor
+                    access
+                  </p>
+                </div>
+
+                <div className='flex flex-col items-center space-y-4 w-full'>
+                  <div className='w-full flex justify-center bg-white p-4 rounded-md'>
+                    <QRCodeSVG
+                      id='editor-qr-code'
+                      value={
+                        editorUrl +
+                        (editorPinCode ? `?pin=${editorPinCode}` : '')
+                      }
+                      size={200}
+                      level='H'
+                      style={{
+                        width: '100%',
+                        maxWidth: '250px',
+                        height: 'auto',
+                      }}
+                    />
+                  </div>
+                  <Button
+                    variant='outline'
+                    onClick={() => downloadQRCode('editor')}
+                    className='flex items-center gap-2'
+                  >
+                    <Download className='h-4 w-4' />
+                    Download QR Code
+                  </Button>
+                  <p className='text-sm text-muted-foreground text-center'>
+                    Share this QR code with your team members for editor access
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Button type='submit'>Save changes</Button>
+      </form>
     </div>
   );
 }

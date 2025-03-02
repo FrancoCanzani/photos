@@ -145,6 +145,10 @@ export default async function EventGalleryPage({
                 </div>
               ))}
             </div>
+            <div>
+              <span className='text-muted-foreground'>Description:</span>{' '}
+              <span>{event.description}</span>
+            </div>
           </div>
         </div>
       </div>

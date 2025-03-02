@@ -51,8 +51,8 @@ export default async function ShareEventPage({
   }
 
   return (
-    <div className='container max-w-4xl py-8'>
-      <h1 className='text-3xl font-bold mb-6'>Share Event: {event.name}</h1>
+    <div className='py-6'>
+      <h1 className='text-xl font-medium mb-6'>Share Event: {event.name}</h1>
       <ShareEvent
         eventId={eventId}
         links={links || []}
