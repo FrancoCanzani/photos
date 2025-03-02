@@ -8,6 +8,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.749.0",
     "@aws-sdk/s3-request-presigner": "^3.749.0",
+    "@googlemaps/js-api-loader": "^1.16.8",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-checkbox": "^1.1.4",
@@ -48,6 +49,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/google.maps": "^3.58.1",
     "@types/node": "22.10.2",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",

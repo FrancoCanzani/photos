@@ -71,7 +71,7 @@ export default async function EventGalleryPage({
   }
 
   return (
-    <div className='max-w-6xl h-full flex-1 py-6'>
+    <div className='h-full flex-1 py-6'>
       {coverImageUrl && (
         <div className='mb-8 w-full h-64 relative rounded-lg overflow-hidden'>
           <Image
@@ -105,12 +105,24 @@ export default async function EventGalleryPage({
           <MultiMediaUploadDialog eventId={eventId} />
         </div>
       </div>
-
-      <EventGallery
-        initialImages={initialImages}
-        eventId={event.id}
-        userId={user.id}
-      />
+      <div className='flex flex-1 items-start justify-between gap-2'>
+        <EventGallery
+          initialImages={initialImages}
+          eventId={event.id}
+          userId={user.id}
+        />
+        <div className='border hover:bg-accent transition-colors duration-300 w-1/3 p-3 text-sm rounded-md flex flex-col space-y-2'>
+          <span className='font-medium'>About your event</span>
+          <div>
+            <span className='text-muted-foreground'>Name:</span>{' '}
+            <span>{event.name}</span>
+          </div>
+          <div>
+            <span className='text-muted-foreground'>Location:</span>{' '}
+            <span>{event.location}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

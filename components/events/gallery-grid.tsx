@@ -31,13 +31,13 @@ export default function GalleryGrid({
   };
 
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1'>
+    <div className='grid grid-cols-1 w-2/3 sm:grid-cols-2 lg:grid-cols-3 gap-1'>
       {images.map(
         (image, index) =>
           image.url && (
             <div
               key={image.id}
-              className='relative group aspect-[4/3] overflow-hidden cursor-pointer'
+              className='relative group aspect-[4/3] overflow-hidden cursor-pointer rounded-md'
               onClick={() => onImageClick(index)}
             >
               <Image
