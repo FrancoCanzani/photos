@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -16,14 +16,24 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { createEvent, uploadFile, type EventFormData } from '@/lib/api/actions';
-import { LocationInput } from '@/components/location-input';
 import Image from 'next/image';
 import { ImageIcon, X } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { Badge } from '@/components/ui/badge';
+
+type AccessLevel = 'view' | 'edit';
+
+interface Cohost {
+  email: string;
+  accessLevel: AccessLevel;
+}
 
 export default function NewEventPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewEmailInput, setViewEmailInput] = useState('');
+  const [editEmailInput, setEditEmailInput] = useState('');
+  const [cohosts, setCohosts] = useState<Cohost[]>([]);
 
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
@@ -31,6 +41,7 @@ export default function NewEventPage() {
     location: '',
     description: '',
     cover: undefined,
+    cohosts: [],
   });
 
   const [coverImage, setCoverImage] = useState<{
@@ -40,14 +51,6 @@ export default function NewEventPage() {
     file: null,
     preview: null,
   });
-
-  useEffect(() => {
-    return () => {
-      if (coverImage.preview) {
-        URL.revokeObjectURL(coverImage.preview);
-      }
-    };
-  }, [coverImage.preview]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -60,6 +63,64 @@ export default function NewEventPage() {
     if (date) {
       setFormData((prev) => ({ ...prev, date }));
     }
+  };
+
+  const handleViewEmailInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setViewEmailInput(e.target.value);
+  };
+
+  const handleEditEmailInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setEditEmailInput(e.target.value);
+  };
+
+  const handleEmailKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    accessLevel: AccessLevel
+  ) => {
+    if (e.key === 'Tab' || e.key === 'Enter') {
+      e.preventDefault();
+      addCohost(accessLevel);
+    }
+  };
+
+  const validateEmail = (email: string): boolean => {
+    if (!email) return false;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return false;
+    }
+
+    if (cohosts.some((cohost) => cohost.email === email)) {
+      toast.error('This email has already been added');
+      return false;
+    }
+
+    return true;
+  };
+
+  const addCohost = (accessLevel: AccessLevel) => {
+    const email =
+      accessLevel === 'view' ? viewEmailInput.trim() : editEmailInput.trim();
+
+    if (!validateEmail(email)) return;
+
+    setCohosts([...cohosts, { email, accessLevel }]);
+
+    if (accessLevel === 'view') {
+      setViewEmailInput('');
+    } else {
+      setEditEmailInput('');
+    }
+  };
+
+  const removeCohost = (email: string) => {
+    setCohosts(cohosts.filter((cohost) => cohost.email !== email));
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -115,11 +176,16 @@ export default function NewEventPage() {
 
     setIsSubmitting(true);
 
+    const eventDataToSubmit = {
+      ...formData,
+      cohosts: cohosts,
+    };
+
     try {
-      if (coverImage.file && formData.cover) {
+      if (coverImage.file && eventDataToSubmit.cover) {
         const fileUploadResult = await uploadFile(
           coverImage.file,
-          formData.cover,
+          eventDataToSubmit.cover,
           'cover-images'
         );
 
@@ -130,7 +196,7 @@ export default function NewEventPage() {
         }
       }
 
-      const result = await createEvent(formData);
+      const result = await createEvent(eventDataToSubmit);
 
       if (result.error) {
         toast.error('Error creating event. Try again later!');
@@ -149,13 +215,13 @@ export default function NewEventPage() {
   return (
     <div className='w-full py-8 min-h-[calc(100vh-200px)] flex flex-col'>
       <div className='mb-8'>
-        <h1 className='text-2xl font-bold'>New Event</h1>
+        <h1 className='text-xl font-medium'>New Event</h1>
         <p className='text-muted-foreground text-sm mt-1'>
           Create a new event to store your moments
         </p>
       </div>
 
-      <div className='space-y-6 flex-1 w-full'>
+      <div className='space-y-4 flex-1 w-full'>
         <div className='space-y-2'>
           <Label>Cover Image</Label>
           <div className='flex cursor-pointer flex-col items-center'>
@@ -202,21 +268,20 @@ export default function NewEventPage() {
           </div>
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
-          <div className='space-y-2 md:col-span-3'>
+        <div className='grid grid-cols-1 md:grid-cols-4 gap-2'>
+          <div className='space-y-1.5 md:col-span-3'>
             <Label htmlFor='name'>Event Name*</Label>
             <Input
               id='name'
               name='name'
               value={formData.name}
-              className='h-12'
               onChange={handleInputChange}
               placeholder='Summer Party'
               required
             />
           </div>
 
-          <div className='space-y-2 md:col-span-1'>
+          <div className='space-y-1.5 md:col-span-1'>
             <Label htmlFor='date'>Event Date*</Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -224,7 +289,7 @@ export default function NewEventPage() {
                   id='date'
                   variant='outline'
                   className={cn(
-                    'w-full h-12 justify-start text-left font-normal',
+                    'w-full justify-start text-left font-normal',
                     !formData.date && 'text-muted-foreground'
                   )}
                 >
@@ -247,15 +312,86 @@ export default function NewEventPage() {
           </div>
         </div>
 
-        <div className='space-y-2'>
-          <LocationInput
+        <div className='space-y-1.5'>
+          <Label>Location</Label>
+          <Input
+            id='location'
+            name='location'
             value={formData.location}
-            onChange={(value) =>
-              setFormData((prev) => ({ ...prev, location: value }))
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, location: e.target.value }))
             }
             required
             placeholder='123 Main St, City'
           />
+        </div>
+
+        <div className='space-y-1.5'>
+          <Label>Co-hosts</Label>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+            <div className='space-y-1.5'>
+              <span className='text-sm text-muted-foreground'>
+                View-only access
+              </span>
+              <div className='relative'>
+                <Input
+                  type='email'
+                  placeholder='Add viewer by email'
+                  value={viewEmailInput}
+                  onChange={handleViewEmailInputChange}
+                  onKeyDown={(e) => handleEmailKeyDown(e, 'view')}
+                />
+              </div>
+            </div>
+
+            <div className='space-y-1.5'>
+              <span className='text-sm text-muted-foreground'>Edit access</span>
+              <div className='relative'>
+                <Input
+                  type='email'
+                  placeholder='Add editor by email'
+                  value={editEmailInput}
+                  onChange={handleEditEmailInputChange}
+                  onKeyDown={(e) => handleEmailKeyDown(e, 'edit')}
+                />
+              </div>
+            </div>
+          </div>
+
+          {cohosts.length > 0 && (
+            <div className='space-y-1.5 mt-4'>
+              <div className='flex flex-wrap gap-2'>
+                {cohosts.map((cohost) => (
+                  <div
+                    key={cohost.email}
+                    className='flex items-center bg-secondary rounded-md pl-3 pr-1 py-1'
+                  >
+                    <span className='text-sm mr-2 max-w-[200px] truncate'>
+                      {cohost.email}
+                    </span>
+                    <Badge
+                      variant={'default'}
+                      className='mr-1 text-xs font-normal rounded-md'
+                    >
+                      {cohost.accessLevel === 'view' ? (
+                        <span>View</span>
+                      ) : (
+                        <span>Edit</span>
+                      )}
+                    </Badge>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-5 w-5'
+                      onClick={() => removeCohost(cohost.email)}
+                    >
+                      <X className='h-3 w-3' />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className='space-y-2 md:col-span-3'>

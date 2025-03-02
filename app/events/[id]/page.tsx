@@ -44,6 +44,11 @@ export default async function EventGalleryPage({
     .order('uploaded_at', { ascending: false })
     .limit(20);
 
+  const { data: cohosts } = await supabase
+    .from('cohosts')
+    .select()
+    .eq('event_id', event.id);
+
   if (error) {
     console.error('Error fetching images:', error);
     return <div className='text-gray-500'>Error loading images.</div>;
@@ -111,7 +116,7 @@ export default async function EventGalleryPage({
           eventId={event.id}
           userId={user.id}
         />
-        <div className='border hover:bg-accent transition-colors duration-300 w-1/3 p-3 text-sm rounded-md flex flex-col space-y-2'>
+        <div className='border hover:bg-accent/20 transition-colors duration-300 w-1/3 p-3 text-sm rounded-md flex flex-col space-y-2'>
           <span className='font-medium'>About your event</span>
           <div>
             <span className='text-muted-foreground'>Name:</span>{' '}
@@ -120,6 +125,26 @@ export default async function EventGalleryPage({
           <div>
             <span className='text-muted-foreground'>Location:</span>{' '}
             <span>{event.location}</span>
+          </div>
+          <div>
+            <span className='text-muted-foreground'>Date:</span>{' '}
+            <span>{new Date(event.date).toDateString()}</span>
+          </div>
+          <div className='flex items-start justify-start flex-col space-y-1.5'>
+            <span className='text-muted-foreground'>Cohosts</span>{' '}
+            <div className='flex flex-wrap gap-1 text-xs'>
+              {cohosts?.map((cohost) => (
+                <div
+                  key={cohost.id}
+                  className='bg-accent py-1 px-1.5 rounded-md'
+                >
+                  <span className='font-medium'>{cohost.email}</span>{' '}
+                  <span className='text-muted-foreground'>
+                    {cohost.access_level}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

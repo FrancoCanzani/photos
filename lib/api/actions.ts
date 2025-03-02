@@ -117,7 +117,7 @@ export async function createEvent(
       };
     }
 
-    const { data: event, error } = await supabase
+    const { data: event, error: eventError } = await supabase
       .from('events')
       .insert({
         user_id: user.id,
@@ -130,13 +130,29 @@ export async function createEvent(
       .select()
       .single();
 
-    if (error) {
+    if (eventError) {
       return {
         error: {
-          message: error.message,
-          code: error.code,
+          message: eventError.message,
+          code: eventError.code,
         },
       };
+    }
+
+    if (validatedData.cohosts && validatedData.cohosts.length > 0) {
+      const cohostRecords = validatedData.cohosts.map((cohost) => ({
+        event_id: event.id,
+        email: cohost.email,
+        access_level: cohost.accessLevel,
+      }));
+
+      const { error: cohostsError } = await supabase
+        .from('cohosts')
+        .insert(cohostRecords);
+
+      if (cohostsError) {
+        console.error('Failed to add co-hosts:', cohostsError);
+      }
     }
 
     revalidatePath('/events');
@@ -188,6 +204,22 @@ export async function deleteEvent(
       };
     }
 
+    const { data: eventData, error: fetchError } = await supabase
+      .from('events')
+      .select('cover_image_key')
+      .eq('id', eventId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (fetchError) {
+      return {
+        error: {
+          message: 'Failed to fetch event data',
+          code: fetchError.code,
+        },
+      };
+    }
+
     const { data: moments, error: momentsError } = await supabase
       .from('moments')
       .select()
@@ -220,6 +252,19 @@ export async function deleteEvent(
           code: eventError.code,
         },
       };
+    }
+
+    if (eventData?.cover_image_key) {
+      try {
+        const command = new DeleteObjectCommand({
+          Bucket: 'cover-images',
+          Key: eventData.cover_image_key,
+        });
+
+        await s3Client.send(command);
+      } catch (s3Error) {
+        console.error('Failed to delete cover image:', s3Error);
+      }
     }
 
     return { data: undefined };

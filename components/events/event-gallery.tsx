@@ -101,7 +101,7 @@ export default function EventGallery({
 
   if (initialImages.length === 0) {
     return (
-      <div className='text-center text-sm flex items-center justify-center flex-1 flex-col min-h-full py-12'>
+      <div className='text-center text-sm w-2/3 flex items-center justify-center flex-1 flex-col min-h-full py-12'>
         <p className='text-muted-foreground text-balance'>
           Nothing to show yet. Upload your first image to start sharing moments!
         </p>

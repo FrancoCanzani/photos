@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 type Libraries = ('places' | 'geometry' | 'drawing' | 'visualization')[];
 
 interface UseGoogleMapsScriptOptions {
-  googleMapsApiKey: string;
   libraries?: Libraries;
 }
 
@@ -15,26 +14,26 @@ interface UseGoogleMapsScriptReturn {
 }
 
 export function useGoogleMaps({
-  googleMapsApiKey,
   libraries = ['places'],
-}: UseGoogleMapsScriptOptions): UseGoogleMapsScriptReturn {
+}: UseGoogleMapsScriptOptions = {}): UseGoogleMapsScriptReturn {
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!googleMapsApiKey) {
+    const librariesKey = libraries.sort().join(',');
+
+    if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
       setLoadError(new Error('Google Maps API key is required'));
       return;
     }
 
-    // Check if the script is already loaded
     if (window.google?.maps) {
       setIsLoaded(true);
       return;
     }
 
     const scriptId = 'google-maps-script';
-    const existingScript = document.getElementById(scriptId);
+    let existingScript = document.getElementById(scriptId) as HTMLScriptElement;
 
     if (existingScript) {
       // Script is loading, wait for it
@@ -51,23 +50,26 @@ export function useGoogleMaps({
       };
     }
 
-    // Create and append the script
     const script = document.createElement('script');
     script.id = scriptId;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=${libraries.join(',')}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=${librariesKey}`;
     script.async = true;
     script.defer = true;
 
-    script.onload = () => setIsLoaded(true);
-    script.onerror = () =>
+    const handleLoad = () => setIsLoaded(true);
+    const handleError = () =>
       setLoadError(new Error('Failed to load Google Maps script'));
+
+    script.addEventListener('load', handleLoad);
+    script.addEventListener('error', handleError);
 
     document.head.appendChild(script);
 
     return () => {
-      // Don't remove the script on unmount as other components might need it
+      script.removeEventListener('load', handleLoad);
+      script.removeEventListener('error', handleError);
     };
-  }, [googleMapsApiKey, libraries]);
+  }, [libraries.sort().join(',')]);
 
   return { isLoaded, loadError };
 }
